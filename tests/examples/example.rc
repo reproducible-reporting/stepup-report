@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: 2024 Toon Verstraelen <Toon.Verstraelen@UGent.be>
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
+# Exit on first error and clean up.
+set -e
+# Examples may override `cleanup` to add their own teardown; it runs on exit,
+# after any lingering background processes have been sent `SIGTERM`.
+# These are the other members of the process group of this script,
+# which is only right when this script leads its own group,
+# as it does when it is started from an interactive shell or by the test harness.
+cleanup() { :; }
+if command -v pgrep > /dev/null; then
+    lingering() { pgrep -g $$ | grep -vx $$; }
+else
+    # Git for Windows has no `pgrep`, so only the background jobs of this script are stopped.
+    # Its `kill` ends a Windows program together with everything that program started.
+    lingering() { jobs -p; }
+fi
+trap 'kill $(lingering) > /dev/null 2> /dev/null || :; cleanup' EXIT
+rm -rvf $(cat .gitignore)
+
+# Bits of the `stepup build` return code, see `docs/reference/returncode.md`.
+# Assert `${RETURNCODE}` against these names instead of numeric literals,
+# e.g. `[[ "${RETURNCODE}" -eq $((RETURN_CODE_FAILED | RETURN_CODE_DRAINED)) ]] || exit 1`.
+# They are kept in sync with the `ReturnCode` enum by `tests/test_conventions.py`.
+RETURN_CODE_INTERNAL=1
+RETURN_CODE_INTERRUPTED=2
+RETURN_CODE_FAILED=4
+RETURN_CODE_WARNING=8
+RETURN_CODE_PENDING=16
+RETURN_CODE_DRAINED=32

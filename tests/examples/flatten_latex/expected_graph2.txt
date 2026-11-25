@@ -1,0 +1,63 @@
+root:
+             product   file:plan.py
+             product   step:./plan.py
+
+file:plan.py
+               state = CONFIRMED
+             creator   root:
+                sink   step:./plan.py
+
+step:./plan.py
+               state = SUCCEEDED
+                need = PLAN
+           using_env = STEPUP_PATH_FILTER [dynamic]
+             creator   root:
+              source   file:plan.py
+             product   file:article_structured.tex
+             product   file:part1.tex
+             product   file:part2.tex
+             product   file:part3.txt
+             product   file:sub/other.tex
+             product   step:sr-flatten-latex article_structured.tex article.tex
+
+file:article_structured.tex
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-flatten-latex article_structured.tex article.tex
+
+file:part1.tex
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-flatten-latex article_structured.tex article.tex
+
+file:part2.tex
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-flatten-latex article_structured.tex article.tex
+
+file:part3.txt
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-flatten-latex article_structured.tex article.tex
+
+step:sr-flatten-latex article_structured.tex article.tex
+               state = SUCCEEDED
+                need = DEFAULT
+             creator   step:./plan.py
+              source   file:article_structured.tex
+              source   file:part1.tex [dynamic]
+              source   file:part2.tex [dynamic]
+              source   file:part3.txt [dynamic]
+              source   file:sub/other.tex [dynamic]
+             product   file:article.tex
+                sink   file:article.tex
+
+file:article.tex
+               state = BUILT
+             creator   step:sr-flatten-latex article_structured.tex article.tex
+              source   step:sr-flatten-latex article_structured.tex article.tex
+
+file:sub/other.tex
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-flatten-latex article_structured.tex article.tex

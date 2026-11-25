@@ -1,0 +1,148 @@
+# SPDX-FileCopyrightText: 2024 Toon Verstraelen <Toon.Verstraelen@UGent.be>
+# SPDX-License-Identifier: LGPL-3.0-or-later
+r"""Identification of dependencies from LaTeX sources."""
+
+import re
+
+from stepup.core.api import amend
+from stepup.core.extapi import filter_dependencies
+from stepup.core.path import Path
+
+__all__ = ("scan_latex_deps",)
+
+RE_OPTIONS = re.MULTILINE | re.DOTALL
+RE_INPUT = re.compile(r"\\input\s*\{([^}]*)}", RE_OPTIONS)
+RE_VERBATIMINPUT = re.compile(r"\\verbatiminput\s*\{([^}]*)}", RE_OPTIONS)
+RE_INCLUDEGRAPHICS = re.compile(r"\\includegraphics(?:\s*\[[^]]*])?\s*\{([^}]*)}", RE_OPTIONS)
+RE_BIBLIOGRAPHY = re.compile(r"\\bibliography\s*\{([^}]*)}", RE_OPTIONS)
+RE_IMPORT = re.compile(r"\\import\s*\{([^}]*)}\s*\{([^}]*)}", RE_OPTIONS)
+RE_INCLUDPDF = re.compile(r"\\includepdf(?:\s*\[[^]]*])?\s*\{([^}]*)}", RE_OPTIONS)
+
+
+def cleanup_path(path, ext=None):
+    """Clean up a path of a dependency extracted from a LaTeX source.
+
+    Parameters
+    ----------
+    path
+        The path derived from the LaTeX source.
+    ext
+        The extension to be added
+
+    Returns
+    -------
+    path_clean
+        A cleaned up file name, including the path of the dirname.
+    """
+    path = path.replace("{", "")
+    path = path.replace("}", "")
+    path = re.sub(r"\s+", " ", path)
+    path = Path(path.strip())
+    if "." not in path.basename() and ext is not None:
+        path = path.with_suffix(ext)
+    return path.normpath()
+
+
+def iter_latex_references(tex_no_comments):
+    r"""Loop over file references in a TeX source without comments.
+
+    Parameters
+    ----------
+    tex_no_comments
+        The contents of a TeX source files from which comments were stripped.
+
+    Yields
+    ------
+    relative_path
+        The change in current directory implied by a TeX command.
+        (This is only relevant for \import, no change in directory otherwise.)
+    filename
+        The filename of the file included, may include directory.
+    ext
+        The extension one may add if not given.
+        (Approximate guess,
+        because the correct extension for figures depends on details of the LaTeX compiler.)
+    """
+    for fn_inc in re.findall(RE_INPUT, tex_no_comments):
+        yield ".", fn_inc, ".tex"
+    for fn_inc in re.findall(RE_VERBATIMINPUT, tex_no_comments):
+        yield ".", fn_inc, ".txt"
+    for fn_inc in re.findall(RE_INCLUDEGRAPHICS, tex_no_comments):
+        yield ".", fn_inc, ".pdf"
+    for fn_inc in re.findall(RE_BIBLIOGRAPHY, tex_no_comments):
+        yield ".", fn_inc, ".bib"
+    for new_root, fn_inc in re.findall(RE_IMPORT, tex_no_comments):
+        yield new_root, fn_inc, ".tex"
+    for fn_inc in re.findall(RE_INCLUDPDF, tex_no_comments):
+        yield ".", fn_inc, ".pdf"
+
+
+def scan_latex_deps(path_tex, tex_root=None, do_amend=True):
+    """Scan LaTeX source code for dependencies.
+
+    Parameters
+    ----------
+    path_tex
+        The path to the LaTeX source to scan.
+    tex_root
+        The directory with respect to which the latex file references should be interpreted.
+    do_amend
+        When True, all opened TeX files are amended as input to the current step.
+
+    Returns
+    -------
+    inp
+        Files read by the LaTeX source, excluding BibTeX databases.
+    bib
+        BibTeX databases referenced by the LaTeX source.
+    out
+        Files declared with a `%REPREP out` comment in the LaTeX source.
+    vol
+        Files declared with a `%REPREP vol` comment in the LaTeX source.
+    """
+    inp = set()
+    out = set()
+    vol = set()
+    bib = set()
+
+    path_tex = Path(path_tex)
+    if path_tex.is_file():
+        tex_root = path_tex.parent.normpath() if tex_root is None else Path(tex_root)
+        with open(path_tex, encoding="utf-8") as fh:
+            stripped = []
+            for line in fh:
+                if "%REPREP ignore" in line:
+                    pass
+                elif line.startswith("%REPREP inp "):
+                    inp.add((tex_root / line[12:].strip()).normpath())
+                elif line.startswith("%REPREP out "):
+                    out.add((tex_root / line[12:].strip()).normpath())
+                elif line.startswith("%REPREP vol "):
+                    vol.add((tex_root / line[12:].strip()).normpath())
+                else:
+                    line = line[: line.find("%")].rstrip()
+                    if len(line) > 0:
+                        stripped.append(line)
+
+            # Process the file references
+            for new_root, fn_inc, ext in iter_latex_references("\n".join(stripped)):
+                new_root = (tex_root / cleanup_path(new_root)).normpath()
+                path_inc = (new_root / cleanup_path(fn_inc, ext)).normpath()
+                if ext == ".bib":
+                    bib.add(path_inc)
+                else:
+                    inp.add(path_inc)
+                if ext == ".tex":
+                    sub_inp, sub_bib, sub_out, sub_vol = scan_latex_deps(path_inc, new_root)
+                    inp.update(sub_inp)
+                    bib.update(sub_bib)
+                    out.update(sub_out)
+                    vol.update(sub_vol)
+
+    # Filter dependencies to exclude global files
+    inp = filter_dependencies(inp)
+    bib = filter_dependencies(bib)
+    if do_amend:
+        amend(inp=[path for path in inp if path.endswith(".tex")])
+
+    return sorted(inp), sorted(bib), sorted(out), sorted(vol)

@@ -1,0 +1,594 @@
+# SPDX-FileCopyrightText: 2024 Toon Verstraelen <Toon.Verstraelen@UGent.be>
+# SPDX-License-Identifier: LGPL-3.0-or-later
+"""Sanitize BibTeX files."""
+
+import argparse
+import enum
+import inspect
+import re
+import shutil
+import sys
+import tempfile
+from collections.abc import Collection, Sequence
+
+import attrs
+import cattrs
+import yaml
+from pyiso4.ltwa import Abbreviate, Pattern
+from pyiso4.prefix_tree import PrefixTree
+
+from stepup.core.hash import compute_file_digest
+from stepup.core.path import Path
+
+from .bibparser import format_bib, parse_bib
+
+__all__ = ("BibsaneConfig", "main")
+
+
+@enum.unique
+class DuplicatePolicy(enum.Enum):
+    """The three policies for duplicate entries."""
+
+    FAIL = "fail"
+    MERGE = "merge"
+    IGNORE = "ignore"
+
+
+@enum.unique
+class FieldPolicy(enum.Enum):
+    """The two policies for bibliography fields."""
+
+    MUST = "must"
+    MAY = "may"
+
+
+@attrs.define
+class BibsaneConfig:
+    """The configuration object controlling BibSane behavior.
+
+    Note that the settings default to the most permissive and least invasive ones.
+    We recommend the opposite settings, but you have to switch knowingly in the config file.
+    """
+
+    root: Path = attrs.field()
+    """The parent directory of the configuration file."""
+
+    duplicate_key: DuplicatePolicy = attrs.field(default=DuplicatePolicy.IGNORE)
+    """The policy for duplicate BibTeX keys: fail, merge or ignore."""
+
+    duplicate_doi: DuplicatePolicy = attrs.field(default=DuplicatePolicy.IGNORE)
+    """The policy for duplicate DOIs: fail, merge or ignore."""
+
+    drop_entry_types: list[str] = attrs.field(default=attrs.Factory(list))
+    """The entry types to drop from the BibTeX database."""
+
+    normalize_doi: bool = attrs.field(default=False)
+    """Set to `True` to normalize the DOIs in the entries."""
+
+    normalize_whitespace: bool = attrs.field(default=False)
+    """Set to `True` to normalize the whitespace in the field values."""
+
+    fix_page_double_hyphen: bool = attrs.field(default=False)
+    """Set to `True` to fix the page ranges for which no double hyphen is used."""
+
+    abbreviate_journals: bool = attrs.field(default=False)
+    """Set to `True` to abbreviate journal names using ISO4."""
+
+    custom_abbreviations: dict[str, str] = attrs.field(factory=dict)
+    """Custom journal abbreviations.
+
+    By default, pyiso4 is used to abbreviate journal names.
+    The custom abbreviations can override those provided by pyiso4.
+    """
+
+    normalize_braces: bool = attrs.field(default=False)
+    """Strip redundant braces and add them where needed.
+
+    This only affects the fields `title`, `booktitle` and `journal`.
+    """
+
+    sort: bool = attrs.field(default=False)
+    """Set to `True` to sort the entries by year and first author.
+
+    The sort key is `{year}{first author lowercase last name}`.
+    """
+
+    citation_policies: dict[str, dict[str, FieldPolicy]] = attrs.field(default=attrs.Factory(dict))
+    """The field policies (must or may) for each entry type."""
+
+    @classmethod
+    def from_file(cls, fn_yaml: str):
+        """Instantiate a configuration from a YAML config file."""
+        if fn_yaml is None:
+            config = cls(Path.cwd())
+        else:
+            with open(fn_yaml, encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+                if data is None:
+                    data = {}
+                elif not isinstance(data, dict):
+                    raise ValueError(
+                        f"Invalid BibSane config file: expected a mapping at top level.({fn_yaml})"
+                    )
+                data.setdefault("root", Path(fn_yaml).parent)
+                config = cattrs.structure(data, cls)
+        return config
+
+
+RETURN_CODE_SUCCESS = 0
+RETURN_CODE_CHANGED = 1
+RETURN_CODE_BROKEN = 2
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """Main program."""
+    args = parse_args(argv)
+
+    print("📂 Load", args.bib)
+    with open(args.bib, encoding="utf-8") as f:
+        entries = parse_bib(f.read())
+    print(f"    Found {len(entries)} BibTeX entries")
+
+    if args.config.duplicate_key == DuplicatePolicy.FAIL:
+        print("🔨 Checking for duplicate BibTeX entry keys")
+        if not check_duplicate_keys(entries):
+            print("    ❌ Stop early due to duplicate BibTeX entry keys")
+            return RETURN_CODE_BROKEN
+
+    if args.config.duplicate_doi == DuplicatePolicy.FAIL:
+        print("🔨 Checking for duplicate DOIs")
+        if not check_duplicate_dois(entries):
+            print("    ❌ Stop early due to duplicate DOIs")
+            return RETURN_CODE_BROKEN
+
+    if args.aux is not None:
+        if not args.aux.endswith(".aux"):
+            print("    ❌ Aux file has no extension .aux:", args.aux)
+            return RETURN_CODE_BROKEN
+        print("📂 Load", args.aux)
+        citations = parse_aux(args.aux)
+        print(f"    Found {len(citations)} citations")
+        citations = set(citations)
+        print(f"    Found {len(citations)} unique citations")
+        if len(citations) == 0:
+            print("    ❓ Ignored aux file because it lacks citations.")
+        else:
+            print("🔨 Checking unused and missing citations")
+            bibdata_complete = check_citations(entries, citations)
+            if not bibdata_complete:
+                print("    ❌ Stop early due to missing citations")
+                return RETURN_CODE_BROKEN
+
+    if len(args.config.drop_entry_types) > 0:
+        print("🔨 Drop irrelevant entry types")
+        drop_entry_types(entries, args.config.drop_entry_types)
+        print(f"    {len(entries)} BibTeX entries left")
+
+    # The default return code, assuming some changes are made but no errors found.
+    retcode = RETURN_CODE_CHANGED
+
+    if len(args.config.citation_policies) > 0:
+        print("🔨 Apply and check citation policies")
+        if not clean_entries(entries, args.config.citation_policies):
+            retcode = RETURN_CODE_BROKEN
+
+    # Check for potential problems that cannot be fixed automatically, not optional.
+    print("🔨 Check for potential mistakes in BibTeX keys")
+    if not case_consistent_keys(entries):
+        retcode = RETURN_CODE_BROKEN
+
+    # Normalize the DOIs (lowercase and remove prefix)
+    if args.config.normalize_doi:
+        print("🔨 Normalize DOIs")
+        valid_dois = normalize_doi(entries)
+        if not valid_dois:
+            retcode = RETURN_CODE_BROKEN
+
+    if args.config.normalize_whitespace:
+        print("🔨 Normalize whitespace")
+        normalize_whitespace(entries)
+
+    if args.config.fix_page_double_hyphen:
+        print("🔨 Fix double hyphen in page ranges")
+        if not fix_page_double_hyphen(entries):
+            retcode = RETURN_CODE_BROKEN
+
+    if args.config.abbreviate_journals:
+        print("🔨 Abbreviate journal names")
+        abbreviate_journal_iso(entries, args.config.custom_abbreviations)
+
+    if args.config.normalize_braces:
+        print("🔨 Normalize braces in titles, booktitles and journal names")
+        normalize_braces(entries)
+
+    if args.config.duplicate_key == DuplicatePolicy.MERGE:
+        print("🔨 Merge references by BibTeX key")
+        if merge_entries(entries, "__KEY__"):
+            retcode = RETURN_CODE_BROKEN
+        print(f"    {len(entries)} entries left")
+    if args.config.duplicate_doi == DuplicatePolicy.MERGE:
+        print("🔨 Merge references by DOI")
+        if merge_entries(entries, "doi"):
+            retcode = RETURN_CODE_BROKEN
+        print(f"    {len(entries)} entries left")
+
+    if args.config.sort:
+        print("🔨 Sort by Year + Author + Title")
+        sort_entries(entries)
+
+    fn_out = args.bib if args.out is None else args.out
+    retcode = write_output(entries, fn_out, retcode)
+    if args.out is not None and retcode == RETURN_CODE_CHANGED:
+        retcode = RETURN_CODE_SUCCESS
+    return retcode
+
+
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser(
+        prog="sr-bibsane",
+        description="Sanitize and clean up a BibTeX file.",
+    )
+    parser.add_argument("bib", help="The BibTeX file to check and clean up.")
+    parser.add_argument(
+        "-a",
+        "--aux",
+        help="The LaTeX aux file of your document. If given, unused entries will be dropped.",
+    )
+    parser.add_argument("-c", "--config", help="An optional configuration file")
+    parser.add_argument(
+        "--out",
+        help="Output path for the cleaned up BibTeX file. "
+        "If not given, sr-bibsane will be overwrite the given file with the cleaned up version "
+        "(if any changes were needed). "
+        "This will cause StepUp to drain the scheduler so you can inspect the changes and rebuild.",
+    )
+    args = parser.parse_args(argv)
+    args.config = BibsaneConfig.from_file(args.config)
+    return args
+
+
+def check_duplicate_keys(entries: list[dict]) -> bool:
+    """Check for duplicate BibTeX entry keys."""
+    seen_ids = set()
+    valid = True
+    for entry in entries:
+        if entry["__KEY__"] in seen_ids:
+            print(f"    ‼️ Duplicate BibTeX entry: {entry['__KEY__']}")
+            valid = False
+        seen_ids.add(entry["__KEY__"])
+    return valid
+
+
+def check_duplicate_dois(entries: list[dict]) -> bool:
+    """Check for duplicate DOIs."""
+    seen_dois = set()
+    valid = True
+    for entry in entries:
+        doi = entry.get("doi")
+        if doi is not None:
+            if doi in seen_dois:
+                print(f"    ‼️ Duplicate DOI: {doi}")
+                valid = False
+            seen_dois.add(doi)
+    return valid
+
+
+# List of citations to ignore, which are added by some LaTeX templates,
+# but which are not correctly parsed by python-bibtexparser.
+# Related issue: https://github.com/sciunto-org/python-bibtexparser/issues/384
+IGNORED_CITATIONS = {"REVTEX41Control", "achemso-control"}
+
+
+def parse_aux(fn_aux: str) -> list[str]:
+    """Parse the relevant parts of a LaTeX aux file."""
+    citations = []
+    with open(fn_aux, encoding="utf-8") as f:
+        for line in f:
+            parse_aux_line("citation", line, citations)
+    # Filter out bogus citations
+    return [citation for citation in citations if citation not in IGNORED_CITATIONS]
+
+
+def parse_aux_line(prefix: str, line: str, words: list[str]):
+    """Parse a (simple) line from a LaTeX aux file."""
+    if line.startswith(rf"\{prefix}{{"):
+        if not (line.endswith("}\n") and line.count("{") == 1 and line.count("}") == 1):
+            print("    🤕 Cannot parse aux line:", line.strip())
+            return
+        words.extend(line[line.find("{") + 1 : -2].split(","))
+
+
+def check_citations(entries: list[dict], citations: Collection[str]) -> bool:
+    """Report unused citations and complain about missing ones."""
+    # Check for undefined references
+    defined = {entry["__KEY__"] for entry in entries}
+    valid = True
+    for citation in citations:
+        if citation not in defined:
+            print("    💀 Missing reference:", citation)
+            valid = False
+
+    # Report unused entries
+    for entry in entries:
+        if entry["__KEY__"] not in citations:
+            print("    🧹 Unused key:", entry["__KEY__"])
+            continue
+    return valid
+
+
+def drop_entry_types(entries: list[dict], drop: Collection[str]):
+    """Drop entries of the given types."""
+    result = []
+    for entry in entries:
+        if entry["__ETYPE__"] in drop:
+            print("    🧹 Dropping irrelevant entry type:", entry["__ETYPE__"])
+            continue
+        result.append(entry)
+    entries[:] = result
+
+
+def clean_entries(
+    entries: list[dict], citation_policies: dict[str, dict[str, FieldPolicy]]
+) -> bool:
+    """Clean the irrelevant fields in each entry and complain about missing ones."""
+    valid = True
+    for old_entry in entries:
+        etype = old_entry["__ETYPE__"]
+        key = old_entry["__KEY__"]
+        new_entry = {"__ETYPE__": etype, "__KEY__": key}
+        if "bibsane" in old_entry:
+            etype = old_entry.pop("bibsane")
+            new_entry["bibsane"] = etype
+        entry_policy = citation_policies.get(etype)
+        if entry_policy is None:
+            print(f"    🤔 {key}: @{etype} is not configured")
+            valid = False
+            continue
+        for field, policy in entry_policy.items():
+            if policy == FieldPolicy.MUST:
+                if field not in old_entry:
+                    print(f"    🫥 {key}: @{etype} missing field {field}")
+                    valid = False
+                else:
+                    new_entry[field] = old_entry.pop(field)
+            else:
+                assert policy == FieldPolicy.MAY
+                if field in old_entry:
+                    new_entry[field] = old_entry.pop(field)
+        if len(old_entry) > 0:
+            for field in old_entry:
+                if field not in ("__ETYPE__", "__KEY__"):
+                    print(f"    💨 {key}: @{etype} discarding field {field}")
+        old_entry.clear()
+        old_entry.update(new_entry)
+    return valid
+
+
+def case_consistent_keys(entries: list[dict]) -> bool:
+    """Detect potential mistakes in the BibTeX entry keys."""
+    id_case_map = {}
+    for entry in entries:
+        id_case_map.setdefault(entry["__KEY__"].lower(), []).append(entry["__KEY__"])
+
+    valid = True
+    for groups in id_case_map.values():
+        if len(groups) > 1:
+            print("    👻 BibTeX entry keys that only differ by case:", " ".join(groups))
+            valid = False
+    return valid
+
+
+DOI_PROXIES = [
+    "https://doi.org/",
+    "http://doi.org/",
+    "http://dx.doi.org/",
+    "https://dx.doi.org/",
+    "doi:",
+]
+
+
+def normalize_doi(entries: list[dict]) -> bool:
+    """Normalize the DOIs in the entries."""
+    valid = True
+    for entry in entries:
+        doi = entry.get("doi")
+        if doi is not None:
+            doi = doi.lower()
+            for proxy in DOI_PROXIES:
+                if doi.startswith(proxy):
+                    doi = doi[len(proxy) :]
+                    break
+            if doi.count("/") == 0 or not doi.startswith("10."):
+                print("    🤕 invalid DOI:", doi)
+                valid = False
+            entry["doi"] = doi
+    return valid
+
+
+def normalize_whitespace(entries: list[dict]):
+    """Normalize the whitespace inside the field values."""
+    for entry in entries:
+        for key, value in list(entry.items()):
+            entry[key] = re.sub(r"\s+", " ", value)
+
+
+HYPFUN_REGEX = "[-֊־᠆‐‑‒––―⸺⸻﹘﹣－=᐀゠⸗⹀〜〰~⸚]"  # noqa: RUF001
+
+
+def fix_page_double_hyphen(entries: list[dict]) -> bool:
+    """Fix page ranges for which no double hyphen is used."""
+    valid = True
+    for entry in entries:
+        pages = entry.get("pages")
+        if pages is not None:
+            parts = [part.strip() for part in re.split(HYPFUN_REGEX, pages)]
+            parts = [part for part in parts if part != ""]
+            if len(parts) == 0:
+                entry["pages"] = ""
+            elif len(parts) == 1:
+                entry["pages"] = parts[0]
+            elif len(parts) == 2:
+                entry["pages"] = "--".join(parts)
+            else:
+                print("    🤕 invalid page range:", pages)
+                valid = False
+    return valid
+
+
+def create_abbreviator() -> Abbreviate:
+    """Create a journal abbreviator from the LTWA and the stopwords of `pyiso4`.
+
+    This does the same as `Abbreviate.create()`, except that it reads the data files as UTF-8.
+    As of pyiso4 0.1.6, `Abbreviate.create()` reads them in the locale encoding,
+    which fails on Windows with Python 3.14 and older, where that is the ANSI code page.
+    """
+    # The data files are taken from the defaults of `Abbreviate.create()`,
+    # because their names change when pyiso4 updates the LTWA.
+    defaults = inspect.signature(Abbreviate.create).parameters
+    with open(defaults["ltwa_file"].default, encoding="utf-8") as fh:
+        lines = fh.readlines()
+    ltwa_prefix = PrefixTree()
+    ltwa_suffix = PrefixTree()
+    # The first line is the header of the CSV file.
+    for line in lines[1:]:
+        if line == "\n":
+            continue
+        pattern = Pattern.from_line(line)
+        key = pattern.to_key()
+        if pattern.start_with_dash:
+            ltwa_suffix.insert(key[::-1], pattern)
+        else:
+            ltwa_prefix.insert(key, pattern)
+    with open(defaults["stopwords"].default, encoding="utf-8") as fh:
+        stopwords = [word.strip() for word in fh.readlines()]
+    return Abbreviate(ltwa_prefix, ltwa_suffix, stopwords)
+
+
+def abbreviate_journal_iso(entries: list[dict], custom: dict[str, str]):
+    """Replace journal names by their ISO abbreviation."""
+    abbreviator = create_abbreviator()
+    for entry in entries:
+        journal = entry.get("journal")
+        if journal is not None and "." not in journal:
+            # Pyiso4 0.1.6 cannot handle LaTeX escapes, which is critical for ampersands.
+            journal = journal.replace(r"\&", "&")
+            abbrev = custom.get(journal)
+            if abbrev is None:
+                abbrev = abbreviator(journal, remove_part=False)
+            if abbrev != journal:
+                print(f"    📓 {journal} -> {abbrev}")
+            abbrev = custom.get(abbrev, abbrev)
+            entry["journal"] = abbrev
+
+
+def normalize_braces(entries: list[dict]):
+    """Brace the words that must keep their capitalization in title, booktitle and journal."""
+    for entry in entries:
+        for key in "title", "booktitle", "journal":
+            value = entry.get(key)
+            if value is not None:
+                entry[key] = brace_words(value)
+
+
+NEEDS_BRACES = re.compile(r"^.+[A-Z].*$")
+
+
+def brace_words(title: str) -> str:
+    """Wrap every word with a capital beyond its first character in braces."""
+    # Remove all existing braces first.
+    title = re.sub(r"[{}]", "", title)
+    result = []
+    for word in title.split():
+        if NEEDS_BRACES.match(word):
+            result.append(f"{{{word}}}")
+        else:
+            result.append(word)
+    return " ".join(result)
+
+
+def merge_entries(entries: list[dict], field) -> bool:
+    """Merge entries who have the same value for the given key."""
+    lookup = {}
+    missing_field = []
+    merge_conflict = False
+    for entry in entries:
+        identifier = entry.get(field)
+        if identifier is None:
+            print(f"    👽 Cannot merge entry without {field}:", entry["__KEY__"])
+            missing_field.append(entry)
+        else:
+            other = lookup.setdefault(identifier)
+            if other is None:
+                lookup[identifier] = entry
+            else:
+                for key, value in entry.items():
+                    if key not in other:
+                        other[key] = value
+                    elif key != "__KEY__" and other[key] != value:
+                        print(f"    😭 Same {field}={identifier}, different {key}:")
+                        print(f"        {value}")
+                        print(f"        {other[key]}")
+                        merge_conflict = True
+                print(f"    🔗 Merged entries with same {field} = {identifier}")
+    result = list(lookup.values()) + missing_field
+    entries[:] = result
+    return merge_conflict
+
+
+def sort_entries(entries: list[dict]):
+    """Sort the entries in convenient way: by year, then by author."""
+
+    def keyfn(entry):
+        return (
+            entry.get("year", "0000")
+            + entry.get("__KEY__", "aaaa0000").lower()
+            + entry.get("title", "Title").lower()
+        )
+
+    entries.sort(key=keyfn)
+
+
+def write_output(entries: list[dict], fn_out: str, retcode: int) -> int:
+    """Write out the fixed bibtex file, in case it has changed.
+
+    Parameters
+    ----------
+    enties
+        The list of BibTeX entries as dictionaries.
+    fn_out
+        The output filename.
+    retcode
+        The provisional return code, based on previous checks.
+
+    Returns
+    -------
+    retcode
+        The final return code.
+    """
+    if retcode == RETURN_CODE_CHANGED:
+        # Write out a single BibTeX database.
+        with tempfile.TemporaryDirectory("sr-bibsane") as dn_tmp:
+            fn_tmp = Path(dn_tmp) / "tmp.bib"
+            with open(fn_tmp, "w", encoding="utf-8", newline="\n") as f:
+                f.write(format_bib(entries))
+
+            # Check if the file has changed.
+            if Path(fn_out).is_file():
+                old_hash = compute_file_digest(fn_out)
+                new_hash = compute_file_digest(fn_tmp)
+                if old_hash == new_hash:
+                    retcode = RETURN_CODE_SUCCESS
+            if retcode == RETURN_CODE_CHANGED:
+                print("💾 Please check the new or corrected file:", fn_out)
+                shutil.copy(fn_tmp, fn_out)
+            else:
+                print("😀 No changes to", fn_out)
+    else:
+        print(f"💥 Broken bibliography. Not writing: {fn_out}")
+
+    return retcode
+
+
+if __name__ == "__main__":
+    sys.exit(main())

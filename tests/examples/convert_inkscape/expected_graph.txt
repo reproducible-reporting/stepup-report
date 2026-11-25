@@ -1,0 +1,70 @@
+root:
+             product   file:plan.py
+             product   step:./plan.py
+
+file:plan.py
+               state = CONFIRMED
+             creator   root:
+                sink   step:./plan.py
+
+step:./plan.py
+               state = SUCCEEDED
+                need = PLAN
+           using_env = STEPUP_PATH_FILTER [dynamic]
+             creator   root:
+              source   file:plan.py
+             product   file:glasses.svg
+             product   file:smile.svg
+             product   step:sr-convert-inkscape glasses.svg glasses.png
+             product   step:sr-convert-inkscape smile.svg final.pdf --step-info=current_step_info.json
+
+file:glasses.svg
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-convert-inkscape glasses.svg glasses.png
+
+file:smile.svg
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-convert-inkscape smile.svg final.pdf --step-info=current_step_info.json
+
+step:sr-convert-inkscape glasses.svg glasses.png
+               state = SUCCEEDED
+                need = DEFAULT (implied by sinks > OPTIONAL)
+           using_env = STEPUP_PATH_FILTER [dynamic]
+                     = STEPUP_REPORT_INKSCAPE [dynamic]
+                     = STEPUP_REPORT_INKSCAPE_PNG_ARGS [dynamic]
+             creator   step:./plan.py
+              source   file:glasses.svg
+             product   file:glasses.png
+                sink   file:glasses.png
+
+file:glasses.png
+               state = BUILT
+             creator   step:sr-convert-inkscape glasses.svg glasses.png
+              source   step:sr-convert-inkscape glasses.svg glasses.png
+                sink   step:sr-convert-inkscape smile.svg final.pdf --step-info=current_step_info.json
+
+step:sr-convert-inkscape smile.svg final.pdf --step-info=current_step_info.json
+               state = SUCCEEDED
+                need = DEFAULT
+           using_env = STEPUP_PATH_FILTER [dynamic]
+                     = STEPUP_REPORT_INKSCAPE [dynamic]
+                     = STEPUP_REPORT_INKSCAPE_PDF_ARGS [dynamic]
+             creator   step:./plan.py
+              source   file:glasses.png [dynamic]
+              source   file:smile.svg
+             product   file:current_step_info.json
+             product   file:final.pdf
+                sink   file:current_step_info.json
+                sink   file:final.pdf
+
+file:current_step_info.json
+               state = BUILT
+             creator   step:sr-convert-inkscape smile.svg final.pdf --step-info=current_step_info.json
+              source   step:sr-convert-inkscape smile.svg final.pdf --step-info=current_step_info.json
+
+file:final.pdf
+               state = BUILT
+             creator   step:sr-convert-inkscape smile.svg final.pdf --step-info=current_step_info.json
+              source   step:sr-convert-inkscape smile.svg final.pdf --step-info=current_step_info.json

@@ -1,0 +1,13 @@
+ STARTUP │ Watching 2 directories
+ STARTUP │ Checking 5 file(s) for changes
+ UPDATED │ plan.py (digest c47e66d5 ➜ 09433907, size 230 ➜ 247)
+   PHASE │ build
+   START │ ./plan.py
+ SUCCESS │ ./plan.py
+   START │ sr-flatten-latex article_structured.tex article.tex
+ SUCCESS │ sr-flatten-latex article_structured.tex article.tex
+DIRECTOR │ Ran 2 job(s).
+DIRECTOR │ Trying to remove 0 deletable file(s) and empty director(y|ies)
+   PHASE │ watch
+DIRECTOR │ Wrote graph to current_graph2.txt, current_graph2_provenance.dot and current_graph2_dependency.dot
+DIRECTOR │ See you!

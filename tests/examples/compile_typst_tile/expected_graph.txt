@@ -1,0 +1,81 @@
+root:
+             product   file:plan.py
+             product   step:./plan.py
+
+file:plan.py
+               state = CONFIRMED
+             creator   root:
+                sink   step:./plan.py
+
+step:./plan.py
+               state = SUCCEEDED
+                need = PLAN
+           using_env = STEPUP_PATH_FILTER [dynamic]
+             creator   root:
+              source   file:plan.py
+             product   file:figure.typ
+             product   file:hexagon.png
+             product   file:horizontal.pdf
+             product   file:pentagon.jpg
+             product   file:square.webp
+             product   file:triangle.gif
+             product   file:vertical.svg
+             product   step:sr-compile-typst figure.typ
+
+file:figure.typ
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-compile-typst figure.typ
+
+file:hexagon.png
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-compile-typst figure.typ
+
+file:horizontal.pdf
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-compile-typst figure.typ
+
+file:pentagon.jpg
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-compile-typst figure.typ
+
+file:square.webp
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-compile-typst figure.typ
+
+file:triangle.gif
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-compile-typst figure.typ
+
+file:vertical.svg
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-compile-typst figure.typ
+
+step:sr-compile-typst figure.typ
+               state = SUCCEEDED
+                need = DEFAULT
+           using_env = STEPUP_PATH_FILTER [dynamic]
+                     = STEPUP_REPORT_TYPST [dynamic]
+                     = STEPUP_REPORT_TYPST_ARGS [dynamic]
+                     = STEPUP_REPORT_TYPST_KEEP_DEPS [dynamic]
+             creator   step:./plan.py
+              source   file:figure.typ
+              source   file:hexagon.png [dynamic]
+              source   file:horizontal.pdf [dynamic]
+              source   file:pentagon.jpg [dynamic]
+              source   file:square.webp [dynamic]
+              source   file:triangle.gif [dynamic]
+              source   file:vertical.svg [dynamic]
+             product   file:figure.pdf
+                sink   file:figure.pdf
+
+file:figure.pdf
+               state = BUILT
+             creator   step:sr-compile-typst figure.typ
+              source   step:sr-compile-typst figure.typ

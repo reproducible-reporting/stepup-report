@@ -1,0 +1,19 @@
+{
+  "command": "sr-compile-typst --step-info=../current_step_info.json ../doc/main.typ",
+  "inp": [
+    "../doc/generated.typ",
+    "../doc/main.typ",
+    "../doc/other.typ"
+  ],
+  "env": [
+    "STEPUP_PATH_FILTER",
+    "STEPUP_REPORT_TYPST",
+    "STEPUP_REPORT_TYPST_ARGS",
+    "STEPUP_REPORT_TYPST_KEEP_DEPS"
+  ],
+  "out": [
+    "../doc/main.pdf"
+  ],
+  "vol": [],
+  "workdir": "stepup"
+}

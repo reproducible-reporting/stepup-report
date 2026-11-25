@@ -1,0 +1,19 @@
+{
+  "command": "sr-compile-tectonic --keep-deps --step-info=current_step_info.json sub/paper.tex",
+  "inp": [
+    "sub/generated.tex",
+    "sub/paper.tex",
+    "sub/references.bib",
+    "sub/smile.pdf"
+  ],
+  "env": [
+    "STEPUP_PATH_FILTER",
+    "STEPUP_REPORT_TECTONIC",
+    "STEPUP_REPORT_TECTONIC_ARGS"
+  ],
+  "out": [
+    "sub/paper.pdf"
+  ],
+  "vol": [],
+  "workdir": "."
+}

@@ -1,0 +1,40 @@
+root:
+             product   file:plan.py
+             product   step:./plan.py
+
+file:plan.py
+               state = CONFIRMED
+             creator   root:
+                sink   step:./plan.py
+
+step:./plan.py
+               state = SUCCEEDED
+                need = PLAN
+           using_env = STEPUP_PATH_FILTER [dynamic]
+             creator   root:
+              source   file:plan.py
+             product   file:source/demo.md
+             product   st:common/
+             product   step:sr-convert-markdown source/demo.md source/demo.html
+
+st:common/
+             creator   step:./plan.py
+
+file:source/demo.md
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-convert-markdown source/demo.md source/demo.html
+
+step:sr-convert-markdown source/demo.md source/demo.html
+               state = SUCCEEDED
+                need = DEFAULT
+           using_env = STEPUP_REPORT_MARKDOWN_CSS [dynamic]
+             creator   step:./plan.py
+              source   file:source/demo.md
+             product   file:source/demo.html
+                sink   file:source/demo.html
+
+file:source/demo.html
+               state = BUILT
+             creator   step:sr-convert-markdown source/demo.md source/demo.html
+              source   step:sr-convert-markdown source/demo.md source/demo.html

@@ -1,0 +1,45 @@
+root:
+             product   file:plan.py
+             product   step:./plan.py
+
+file:plan.py
+               state = CONFIRMED
+             creator   root:
+                sink   step:./plan.py
+
+step:./plan.py
+               state = SUCCEEDED
+                need = PLAN
+           using_env = STEPUP_PATH_FILTER [dynamic]
+             creator   root:
+              source   file:plan.py
+             product   file:lorem.typ
+             product   step:sr-compile-typst --keep-deps lorem.typ --out=lorem.html
+
+file:lorem.typ
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-compile-typst --keep-deps lorem.typ --out=lorem.html
+
+step:sr-compile-typst --keep-deps lorem.typ --out=lorem.html
+               state = SUCCEEDED
+                need = DEFAULT
+           using_env = STEPUP_PATH_FILTER [dynamic]
+                     = STEPUP_REPORT_TYPST [dynamic]
+                     = STEPUP_REPORT_TYPST_ARGS [dynamic]
+             creator   step:./plan.py
+              source   file:lorem.typ
+             product   file:lorem.deps.json
+             product   file:lorem.html
+                sink   file:lorem.deps.json
+                sink   file:lorem.html
+
+file:lorem.deps.json
+               state = BUILT
+             creator   step:sr-compile-typst --keep-deps lorem.typ --out=lorem.html
+              source   step:sr-compile-typst --keep-deps lorem.typ --out=lorem.html
+
+file:lorem.html
+               state = BUILT
+             creator   step:sr-compile-typst --keep-deps lorem.typ --out=lorem.html
+              source   step:sr-compile-typst --keep-deps lorem.typ --out=lorem.html

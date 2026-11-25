@@ -1,0 +1,34 @@
+ STARTUP │ (Re)initialized boot script
+   PHASE │ build
+   START │ ./plan.py
+ SUCCESS │ ./plan.py
+   START │ sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json
+DEFERRED │ sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json
+────────────────────────── Unavailable dynamic inputs ──────────────────────────
+subdir/generated.tex
+────────────────────────────────────────────────────────────────────────────────
+   START │ echo 'Verbatim input:\verbatiminput{code.txt}' > subdir/generated.tex
+ SUCCESS │ echo 'Verbatim input:\verbatiminput{code.txt}' > subdir/generated.tex
+   START │ echo '2 + 2' > subdir/code.txt
+ SUCCESS │ echo '2 + 2' > subdir/code.txt
+   START │ sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json
+ SUCCESS │ sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json
+DIRECTOR │ Ran 5 job(s).
+DIRECTOR │ Trying to remove 0 deletable file(s) and empty director(y|ies)
+   PHASE │ watch
+DIRECTOR │ Wrote graph to current_graph.txt, current_graph_provenance.dot and current_graph_dependency.dot
+ DELETED │ paper.aux
+ DELETED │ subdir/generated.tex
+ DELETED │ subdir/code.txt
+ DELETED │ paper.pdf
+   PHASE │ build
+   START │ echo 'Verbatim input:\verbatiminput{code.txt}' > subdir/generated.tex
+ SUCCESS │ echo 'Verbatim input:\verbatiminput{code.txt}' > subdir/generated.tex
+   START │ echo '2 + 2' > subdir/code.txt
+ SUCCESS │ echo '2 + 2' > subdir/code.txt
+   START │ sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json
+ SUCCESS │ sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json
+DIRECTOR │ Ran 3 job(s).
+DIRECTOR │ Trying to remove 0 deletable file(s) and empty director(y|ies)
+   PHASE │ watch
+DIRECTOR │ See you!

@@ -1,0 +1,21 @@
+{
+  "command": "sr-compile-latex sub/paper.tex --run-bibtex --step-info=current_step_info.json",
+  "inp": [
+    "sub/generated.tex",
+    "sub/paper.tex",
+    "sub/references.bib",
+    "sub/smile.pdf"
+  ],
+  "env": [
+    "STEPUP_PATH_FILTER",
+    "STEPUP_REPORT_BIBTEX",
+    "STEPUP_REPORT_LATEX"
+  ],
+  "out": [
+    "sub/paper.aux",
+    "sub/paper.bbl",
+    "sub/paper.pdf"
+  ],
+  "vol": [],
+  "workdir": "."
+}

@@ -1,0 +1,16 @@
+{
+  "command": "sr-convert-weasyprint doc.html doc.pdf --step-info=current_step_info.json",
+  "inp": [
+    "block.png",
+    "doc.html",
+    "style.css"
+  ],
+  "env": [
+    "STEPUP_REPORT_WEASYPRINT"
+  ],
+  "out": [
+    "doc.pdf"
+  ],
+  "vol": [],
+  "workdir": "."
+}

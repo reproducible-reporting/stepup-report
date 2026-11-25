@@ -1,0 +1,17 @@
+{
+  "command": "sr-compile-typst --step-info=current_step_info.json document.typ --out=out.pdf",
+  "inp": [
+    "document.typ"
+  ],
+  "env": [
+    "STEPUP_PATH_FILTER",
+    "STEPUP_REPORT_TYPST",
+    "STEPUP_REPORT_TYPST_ARGS",
+    "STEPUP_REPORT_TYPST_KEEP_DEPS"
+  ],
+  "out": [
+    "out.pdf"
+  ],
+  "vol": [],
+  "workdir": "."
+}

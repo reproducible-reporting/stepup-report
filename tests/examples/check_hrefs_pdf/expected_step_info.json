@@ -1,0 +1,16 @@
+{
+  "command": "sr-compile-latex main.tex --run-bibtex --step-info=current_step_info.json",
+  "inp": [
+    "main.tex"
+  ],
+  "env": [
+    "STEPUP_PATH_FILTER",
+    "STEPUP_REPORT_LATEX"
+  ],
+  "out": [
+    "main.aux",
+    "main.pdf"
+  ],
+  "vol": [],
+  "workdir": "."
+}

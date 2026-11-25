@@ -1,0 +1,61 @@
+root:
+             product   file:plan.py
+             product   step:./plan.py
+
+file:plan.py
+               state = CONFIRMED
+             creator   root:
+                sink   step:./plan.py
+
+step:./plan.py
+               state = SUCCEEDED
+                need = PLAN
+           using_env = STEPUP_PATH_FILTER [dynamic]
+             creator   root:
+              source   file:plan.py
+             product   file:document.typ
+             product   step:echo 'fixed: new' > data.yaml
+             product   step:sr-compile-typst document.typ
+
+file:document.typ
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-compile-typst document.typ
+
+step:sr-compile-typst document.typ
+               state = SUCCEEDED
+                need = DEFAULT
+           using_env = STEPUP_PATH_FILTER [dynamic]
+                     = STEPUP_REPORT_TYPST [dynamic]
+                     = STEPUP_REPORT_TYPST_ARGS [dynamic]
+                     = STEPUP_REPORT_TYPST_KEEP_DEPS [dynamic]
+             creator   step:./plan.py
+              source   file:data.yaml [dynamic]
+              source   file:document.typ
+             product   file:document.deps.json
+             product   file:document.pdf
+                sink   file:document.deps.json [dynamic]
+                sink   file:document.pdf
+
+file:document.pdf
+               state = BUILT
+             creator   step:sr-compile-typst document.typ
+              source   step:sr-compile-typst document.typ
+
+step:echo 'fixed: new' > data.yaml
+               state = SUCCEEDED
+                need = DEFAULT
+             creator   step:./plan.py
+             product   file:data.yaml
+                sink   file:data.yaml
+
+file:data.yaml
+               state = BUILT
+             creator   step:echo 'fixed: new' > data.yaml
+              source   step:echo 'fixed: new' > data.yaml
+                sink   step:sr-compile-typst document.typ
+
+file:document.deps.json
+               state = BUILT
+             creator   step:sr-compile-typst document.typ
+              source   step:sr-compile-typst document.typ

@@ -1,0 +1,10 @@
+DIRECTOR │ Listening on /tmp/stepup-########/director (StepUp Core 4.3.0)
+ STARTUP │ (Re)initialized boot script
+   PHASE │ build
+   START │ ./plan.py
+ SUCCESS │ ./plan.py
+   START │ sr-unplot plot.svg plot.json
+ SUCCESS │ sr-unplot plot.svg plot.json
+DIRECTOR │ Ran 2 job(s).
+DIRECTOR │ Trying to remove 0 deletable file(s) and empty director(y|ies)
+DIRECTOR │ See you!

@@ -1,0 +1,17 @@
+{
+  "command": "sr-compile-latex paper.tex --step-info=current_step_info.json",
+  "inp": [
+    "paper.bbl",
+    "paper.tex"
+  ],
+  "env": [
+    "STEPUP_PATH_FILTER",
+    "STEPUP_REPORT_LATEX"
+  ],
+  "out": [
+    "paper.aux",
+    "paper.pdf"
+  ],
+  "vol": [],
+  "workdir": "."
+}

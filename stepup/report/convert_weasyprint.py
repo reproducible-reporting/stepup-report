@@ -1,0 +1,99 @@
+# SPDX-FileCopyrightText: 2024 Toon Verstraelen <Toon.Verstraelen@UGent.be>
+# SPDX-License-Identifier: LGPL-3.0-or-later
+"""Wrapper for HTML to PDF conversion."""
+
+import argparse
+import shlex
+import sys
+from collections.abc import Iterator, Sequence
+
+from defusedxml import ElementTree
+
+from stepup.core.api import amend, getenv
+from stepup.core.extapi import run_subprocess
+from stepup.core.path import Path
+
+from .step_info import write_step_info
+
+__all__ = ("main",)
+
+
+def main(argv: Sequence[str] | None = None):
+    """Main program."""
+    args = parse_args(argv)
+    if not args.path_pdf.endswith(".pdf"):
+        raise ValueError("The output must have a pdf extensions.")
+    if args.weasyprint is None:
+        args.weasyprint = getenv("STEPUP_REPORT_WEASYPRINT", "weasyprint")
+    inp_paths = search_html_deps(args.path_html)
+    amend(inp=inp_paths)
+    popenargs = [args.weasyprint, args.path_html, args.path_pdf]
+    run_subprocess(shlex.join(popenargs))
+    if args.step_info is not None:
+        write_step_info(args.step_info)
+
+
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser(
+        prog="sr-convert-weasyprint",
+        description="Convert a HTML to PDF, with dependency tracking.",
+    )
+    parser.add_argument("path_html", help="The input HTML file.")
+    parser.add_argument("path_pdf", help="The output PDF file.")
+    parser.add_argument(
+        "--weasyprint",
+        help="The weasyprint executable to use. "
+        "Defaults to `${STEPUP_REPORT_WEASYPRINT}` variable "
+        "or `weasyprint` if the variable is unset.",
+    )
+    parser.add_argument(
+        "--step-info",
+        help="Write a step info file with the dependencies of the step, "
+        "including the images and style sheets of the HTML file, useful for archiving.",
+    )
+    return parser.parse_args(argv)
+
+
+def search_html_deps(src: str) -> list[str]:
+    """Search implicit dependencies in HTML files: included images and css."""
+    implicit = []
+    todo = [src]
+    idep = 0
+    while idep < len(todo):
+        path_html = Path(todo[idep])
+        for href in iter_html_hrefs(path_html):
+            if href.startswith("file://"):
+                href = href[7:]
+            if "://" not in href:
+                if not href.startswith("/"):
+                    href = path_html.parent / href
+                implicit.append(href)
+                if href.endswith(".html"):
+                    todo.append(href)
+        idep += 1
+    return implicit
+
+
+def iter_html_hrefs(path_html: str) -> Iterator[str]:
+    parser = ElementTree.iterparse(path_html, events=("start",))
+    for event, elem in parser:
+        if event == "start":
+            tag = elem.tag.rpartition("}")[2]
+            if tag == "img":
+                for key in "src", "{http://www.w3.org/1999/xhtml}src":
+                    href = elem.attrib.get(key)
+                    if href is not None and "data:image" not in href:
+                        yield href
+                        break
+            elif tag == "link":
+                for key in "href", "{http://www.w3.org/1999/xhtml}href":
+                    href = elem.attrib.get(key)
+                    if href is not None and "data:image" not in href:
+                        yield href
+                        break
+        elem.clear()
+
+
+if __name__ == "__main__":
+    sys.exit(main())

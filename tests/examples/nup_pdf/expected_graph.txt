@@ -1,0 +1,38 @@
+root:
+             product   file:plan.py
+             product   step:./plan.py
+
+file:plan.py
+               state = CONFIRMED
+             creator   root:
+                sink   step:./plan.py
+
+step:./plan.py
+               state = SUCCEEDED
+                need = PLAN
+           using_env = STEPUP_PATH_FILTER [dynamic]
+             creator   root:
+              source   file:plan.py
+             product   file:src.pdf
+             product   step:sr-nup-pdf src.pdf dst.pdf -p A4
+
+file:src.pdf
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-nup-pdf src.pdf dst.pdf -p A4
+
+step:sr-nup-pdf src.pdf dst.pdf -p A4
+               state = SUCCEEDED
+                need = DEFAULT
+           using_env = STEPUP_REPORT_NUP_MARGIN [dynamic]
+                     = STEPUP_REPORT_NUP_NCOL [dynamic]
+                     = STEPUP_REPORT_NUP_NROW [dynamic]
+             creator   step:./plan.py
+              source   file:src.pdf
+             product   file:dst.pdf
+                sink   file:dst.pdf
+
+file:dst.pdf
+               state = BUILT
+             creator   step:sr-nup-pdf src.pdf dst.pdf -p A4
+              source   step:sr-nup-pdf src.pdf dst.pdf -p A4

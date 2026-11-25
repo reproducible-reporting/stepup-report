@@ -1,0 +1,89 @@
+root:
+             product   file:plan.py
+             product   step:./plan.py
+
+file:plan.py
+               state = CONFIRMED
+             creator   root:
+                sink   step:./plan.py
+
+step:./plan.py
+               state = SUCCEEDED
+                need = PLAN
+           using_env = STEPUP_PATH_FILTER [dynamic]
+             creator   root:
+              source   file:plan.py
+             product   file:smile.pdf
+             product   step:sr-cat-pdf smile.pdf smile.pdf double.pdf
+             product   step:sr-raster-pdf double.pdf 'rastered/double-{0p}-{t}.png' -r 50
+             product   step:sr-raster-pdf smile.pdf rastered/smile.pdf
+             product   step:sr-raster-pdf smile.pdf rastered/smile.png -r 50
+
+file:smile.pdf
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-cat-pdf smile.pdf smile.pdf double.pdf
+                sink   step:sr-raster-pdf smile.pdf rastered/smile.pdf
+                sink   step:sr-raster-pdf smile.pdf rastered/smile.png -r 50
+
+step:sr-raster-pdf smile.pdf rastered/smile.pdf
+               state = SUCCEEDED
+                need = DEFAULT
+           using_env = STEPUP_REPORT_RASTER_QUALITY [dynamic]
+                     = STEPUP_REPORT_RASTER_RESOLUTION [dynamic]
+             creator   step:./plan.py
+              source   file:smile.pdf
+             product   file:rastered/smile.pdf
+                sink   file:rastered/smile.pdf
+
+file:rastered/smile.pdf
+               state = BUILT
+             creator   step:sr-raster-pdf smile.pdf rastered/smile.pdf
+              source   step:sr-raster-pdf smile.pdf rastered/smile.pdf
+
+step:sr-raster-pdf smile.pdf rastered/smile.png -r 50
+               state = SUCCEEDED
+                need = DEFAULT
+             creator   step:./plan.py
+              source   file:smile.pdf
+             product   file:rastered/smile.png
+                sink   file:rastered/smile.png
+
+file:rastered/smile.png
+               state = BUILT
+             creator   step:sr-raster-pdf smile.pdf rastered/smile.png -r 50
+              source   step:sr-raster-pdf smile.pdf rastered/smile.png -r 50
+
+step:sr-cat-pdf smile.pdf smile.pdf double.pdf
+               state = SUCCEEDED
+                need = DEFAULT
+             creator   step:./plan.py
+              source   file:smile.pdf
+             product   file:double.pdf
+                sink   file:double.pdf
+
+file:double.pdf
+               state = BUILT
+             creator   step:sr-cat-pdf smile.pdf smile.pdf double.pdf
+              source   step:sr-cat-pdf smile.pdf smile.pdf double.pdf
+                sink   step:sr-raster-pdf double.pdf 'rastered/double-{0p}-{t}.png' -r 50
+
+step:sr-raster-pdf double.pdf 'rastered/double-{0p}-{t}.png' -r 50
+               state = SUCCEEDED
+                need = DEFAULT
+             creator   step:./plan.py
+              source   file:double.pdf
+             product   file:rastered/double-1-2.png
+             product   file:rastered/double-2-2.png
+                sink   file:rastered/double-1-2.png [dynamic]
+                sink   file:rastered/double-2-2.png [dynamic]
+
+file:rastered/double-1-2.png
+               state = BUILT
+             creator   step:sr-raster-pdf double.pdf 'rastered/double-{0p}-{t}.png' -r 50
+              source   step:sr-raster-pdf double.pdf 'rastered/double-{0p}-{t}.png' -r 50
+
+file:rastered/double-2-2.png
+               state = BUILT
+             creator   step:sr-raster-pdf double.pdf 'rastered/double-{0p}-{t}.png' -r 50
+              source   step:sr-raster-pdf double.pdf 'rastered/double-{0p}-{t}.png' -r 50

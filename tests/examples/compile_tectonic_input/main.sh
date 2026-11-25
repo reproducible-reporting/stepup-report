@@ -1,0 +1,27 @@
+#!/usr/bin/env -S bash -x
+source ../example.rc
+
+# Run the example
+sb -w -j 1 & # > current_stdout.txt &
+
+# Get the graph after completion of the pending steps.
+stepup wait
+stepup graph current_graph
+
+# Reproducibility test
+rm generated.tex
+mv paper.pdf paper1.pdf
+stepup wait -d paper.pdf
+stepup wait -d generated.tex
+stepup rebuild
+stepup join
+cmp paper.pdf paper1.pdf
+
+# Wait for background processes, if any.
+wait
+
+# Check files that are expected to be present and/or missing.
+[[ -f plan.py ]] || exit 1
+[[ -f paper.pdf ]] || exit 1
+[[ -f paper.dep ]] || exit 1
+[[ -f paper1.pdf ]] || exit 1

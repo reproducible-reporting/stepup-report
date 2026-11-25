@@ -1,0 +1,102 @@
+root:
+             product   file:plan.py
+             product   step:./plan.py
+
+file:plan.py
+               state = CONFIRMED
+             creator   root:
+                sink   step:./plan.py
+
+step:./plan.py
+               state = SUCCEEDED
+                need = PLAN
+           using_env = STEPUP_PATH_FILTER [dynamic]
+             creator   root:
+              source   file:plan.py
+             product   file:sub/paper.tex
+             product   file:sub/references.bib
+             product   file:sub/smile.pdf
+             product   step:echo 'Hi there!' > generated.tex  # wd=sub
+             product   step:sr-compile-latex sub/paper.tex --run-bibtex --step-info=current_step_info.json
+
+file:sub/paper.tex
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-compile-latex sub/paper.tex --run-bibtex --step-info=current_step_info.json
+
+file:sub/references.bib
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-compile-latex sub/paper.tex --run-bibtex --step-info=current_step_info.json
+
+file:sub/smile.pdf
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-compile-latex sub/paper.tex --run-bibtex --step-info=current_step_info.json
+
+step:sr-compile-latex sub/paper.tex --run-bibtex --step-info=current_step_info.json
+               state = SUCCEEDED
+                need = DEFAULT
+           using_env = STEPUP_PATH_FILTER [dynamic]
+                     = STEPUP_REPORT_BIBTEX [dynamic]
+                     = STEPUP_REPORT_LATEX [dynamic]
+             creator   step:./plan.py
+              source   file:sub/generated.tex [dynamic]
+              source   file:sub/paper.tex
+              source   file:sub/references.bib [dynamic]
+              source   file:sub/smile.pdf [dynamic]
+             product   file:current_step_info.json
+             product   file:sub/paper.aux
+             product   file:sub/paper.bbl
+             product   file:sub/paper.fls
+             product   file:sub/paper.log
+             product   file:sub/paper.pdf
+                sink   file:current_step_info.json
+                sink   file:sub/paper.aux
+                sink   file:sub/paper.bbl [dynamic]
+                sink   file:sub/paper.fls
+                sink   file:sub/paper.log [dynamic]
+                sink   file:sub/paper.pdf
+
+file:current_step_info.json
+               state = BUILT
+             creator   step:sr-compile-latex sub/paper.tex --run-bibtex --step-info=current_step_info.json
+              source   step:sr-compile-latex sub/paper.tex --run-bibtex --step-info=current_step_info.json
+
+file:sub/paper.aux
+               state = BUILT
+             creator   step:sr-compile-latex sub/paper.tex --run-bibtex --step-info=current_step_info.json
+              source   step:sr-compile-latex sub/paper.tex --run-bibtex --step-info=current_step_info.json
+
+file:sub/paper.fls
+               state = BUILT
+             creator   step:sr-compile-latex sub/paper.tex --run-bibtex --step-info=current_step_info.json
+              source   step:sr-compile-latex sub/paper.tex --run-bibtex --step-info=current_step_info.json
+
+file:sub/paper.pdf
+               state = BUILT
+             creator   step:sr-compile-latex sub/paper.tex --run-bibtex --step-info=current_step_info.json
+              source   step:sr-compile-latex sub/paper.tex --run-bibtex --step-info=current_step_info.json
+
+step:echo 'Hi there!' > generated.tex  # wd=sub
+               state = SUCCEEDED
+                need = DEFAULT
+             creator   step:./plan.py
+             product   file:sub/generated.tex
+                sink   file:sub/generated.tex
+
+file:sub/generated.tex
+               state = BUILT
+             creator   step:echo 'Hi there!' > generated.tex  # wd=sub
+              source   step:echo 'Hi there!' > generated.tex  # wd=sub
+                sink   step:sr-compile-latex sub/paper.tex --run-bibtex --step-info=current_step_info.json
+
+file:sub/paper.bbl
+               state = BUILT
+             creator   step:sr-compile-latex sub/paper.tex --run-bibtex --step-info=current_step_info.json
+              source   step:sr-compile-latex sub/paper.tex --run-bibtex --step-info=current_step_info.json
+
+file:sub/paper.log
+               state = VOLATILE
+             creator   step:sr-compile-latex sub/paper.tex --run-bibtex --step-info=current_step_info.json
+              source   step:sr-compile-latex sub/paper.tex --run-bibtex --step-info=current_step_info.json

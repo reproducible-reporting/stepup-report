@@ -1,0 +1,10 @@
+📂 Load input.bib
+    Found 2 BibTeX entries
+🔨 Check for potential mistakes in BibTeX keys
+🔨 Merge references by DOI
+    😭 Same doi=10.1000/xyz123, different title:
+        Foo 2
+        Foo 1
+    🔗 Merged entries with same doi = 10.1000/xyz123
+    1 entries left
+💥 Broken bibliography. Not writing: current.bib

@@ -1,0 +1,39 @@
+root:
+             product   file:plan.py
+             product   step:./plan.py
+
+file:plan.py
+               state = CONFIRMED
+             creator   root:
+                sink   step:./plan.py
+
+step:./plan.py
+               state = SUCCEEDED
+                need = PLAN
+           using_env = STEPUP_PATH_FILTER [dynamic]
+             creator   root:
+              source   file:plan.py
+             product   file:belgium.typ
+             product   step:sr-compile-typst --resolution=30 belgium.typ --out=flag.png
+
+file:belgium.typ
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-compile-typst --resolution=30 belgium.typ --out=flag.png
+
+step:sr-compile-typst --resolution=30 belgium.typ --out=flag.png
+               state = SUCCEEDED
+                need = DEFAULT
+           using_env = STEPUP_PATH_FILTER [dynamic]
+                     = STEPUP_REPORT_TYPST [dynamic]
+                     = STEPUP_REPORT_TYPST_ARGS [dynamic]
+                     = STEPUP_REPORT_TYPST_KEEP_DEPS [dynamic]
+             creator   step:./plan.py
+              source   file:belgium.typ
+             product   file:flag.png
+                sink   file:flag.png
+
+file:flag.png
+               state = BUILT
+             creator   step:sr-compile-typst --resolution=30 belgium.typ --out=flag.png
+              source   step:sr-compile-typst --resolution=30 belgium.typ --out=flag.png

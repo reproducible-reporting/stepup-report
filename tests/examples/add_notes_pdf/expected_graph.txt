@@ -1,0 +1,42 @@
+root:
+             product   file:plan.py
+             product   step:./plan.py
+
+file:plan.py
+               state = CONFIRMED
+             creator   root:
+                sink   step:./plan.py
+
+step:./plan.py
+               state = SUCCEEDED
+                need = PLAN
+           using_env = STEPUP_PATH_FILTER [dynamic]
+             creator   root:
+              source   file:plan.py
+             product   file:notes.pdf
+             product   file:src.pdf
+             product   step:sr-add-notes-pdf src.pdf notes.pdf dst.pdf
+
+file:notes.pdf
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-add-notes-pdf src.pdf notes.pdf dst.pdf
+
+file:src.pdf
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-add-notes-pdf src.pdf notes.pdf dst.pdf
+
+step:sr-add-notes-pdf src.pdf notes.pdf dst.pdf
+               state = SUCCEEDED
+                need = DEFAULT
+             creator   step:./plan.py
+              source   file:notes.pdf
+              source   file:src.pdf
+             product   file:dst.pdf
+                sink   file:dst.pdf
+
+file:dst.pdf
+               state = BUILT
+             creator   step:sr-add-notes-pdf src.pdf notes.pdf dst.pdf
+              source   step:sr-add-notes-pdf src.pdf notes.pdf dst.pdf

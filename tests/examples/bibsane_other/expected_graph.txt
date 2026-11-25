@@ -1,0 +1,64 @@
+root:
+             product   file:plan.py
+             product   step:./plan.py
+
+file:plan.py
+               state = CONFIRMED
+             creator   root:
+                sink   step:./plan.py
+
+step:./plan.py
+               state = SUCCEEDED
+                need = PLAN
+           using_env = STEPUP_PATH_FILTER [dynamic]
+             creator   root:
+              source   file:plan.py
+             product   file:bibsane.yaml
+             product   file:paper.aux
+             product   file:references.bib
+             product   step:cp -p cleaned.bib copy.bib
+             product   step:sr-bibsane references.bib --aux=paper.aux --config=bibsane.yaml --out=cleaned.bib
+
+file:bibsane.yaml
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-bibsane references.bib --aux=paper.aux --config=bibsane.yaml --out=cleaned.bib
+
+file:paper.aux
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-bibsane references.bib --aux=paper.aux --config=bibsane.yaml --out=cleaned.bib
+
+file:references.bib
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-bibsane references.bib --aux=paper.aux --config=bibsane.yaml --out=cleaned.bib
+
+step:sr-bibsane references.bib --aux=paper.aux --config=bibsane.yaml --out=cleaned.bib
+               state = SUCCEEDED
+                need = DEFAULT
+             creator   step:./plan.py
+              source   file:bibsane.yaml
+              source   file:paper.aux
+              source   file:references.bib
+             product   file:cleaned.bib
+                sink   file:cleaned.bib
+
+file:cleaned.bib
+               state = BUILT
+             creator   step:sr-bibsane references.bib --aux=paper.aux --config=bibsane.yaml --out=cleaned.bib
+              source   step:sr-bibsane references.bib --aux=paper.aux --config=bibsane.yaml --out=cleaned.bib
+                sink   step:cp -p cleaned.bib copy.bib
+
+step:cp -p cleaned.bib copy.bib
+               state = SUCCEEDED
+                need = DEFAULT
+             creator   step:./plan.py
+              source   file:cleaned.bib
+             product   file:copy.bib
+                sink   file:copy.bib
+
+file:copy.bib
+               state = BUILT
+             creator   step:cp -p cleaned.bib copy.bib
+              source   step:cp -p cleaned.bib copy.bib

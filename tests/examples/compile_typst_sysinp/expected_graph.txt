@@ -1,0 +1,77 @@
+root:
+             product   file:plan.py
+             product   step:./plan.py
+
+file:plan.py
+               state = CONFIRMED
+             creator   root:
+                sink   step:./plan.py
+
+step:./plan.py
+               state = SUCCEEDED
+                need = PLAN
+           using_env = STEPUP_PATH_FILTER [dynamic]
+             creator   root:
+              source   file:plan.py
+             product   file:template.typ
+             product   step:sr-compile-typst template.typ --out=alice.pdf --sysinp name=Alic age=29
+             product   step:sr-compile-typst template.typ --out=bob.pdf --sysinp name=Bob age=31
+             product   step:sr-compile-typst template.typ --out=charlie.pdf --sysinp name=Charlie age=27
+
+file:template.typ
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-compile-typst template.typ --out=alice.pdf --sysinp name=Alic age=29
+                sink   step:sr-compile-typst template.typ --out=bob.pdf --sysinp name=Bob age=31
+                sink   step:sr-compile-typst template.typ --out=charlie.pdf --sysinp name=Charlie age=27
+
+step:sr-compile-typst template.typ --out=alice.pdf --sysinp name=Alic age=29
+               state = SUCCEEDED
+                need = DEFAULT
+           using_env = STEPUP_PATH_FILTER [dynamic]
+                     = STEPUP_REPORT_TYPST [dynamic]
+                     = STEPUP_REPORT_TYPST_ARGS [dynamic]
+                     = STEPUP_REPORT_TYPST_KEEP_DEPS [dynamic]
+             creator   step:./plan.py
+              source   file:template.typ
+             product   file:alice.pdf
+                sink   file:alice.pdf
+
+file:alice.pdf
+               state = BUILT
+             creator   step:sr-compile-typst template.typ --out=alice.pdf --sysinp name=Alic age=29
+              source   step:sr-compile-typst template.typ --out=alice.pdf --sysinp name=Alic age=29
+
+step:sr-compile-typst template.typ --out=bob.pdf --sysinp name=Bob age=31
+               state = SUCCEEDED
+                need = DEFAULT
+           using_env = STEPUP_PATH_FILTER [dynamic]
+                     = STEPUP_REPORT_TYPST [dynamic]
+                     = STEPUP_REPORT_TYPST_ARGS [dynamic]
+                     = STEPUP_REPORT_TYPST_KEEP_DEPS [dynamic]
+             creator   step:./plan.py
+              source   file:template.typ
+             product   file:bob.pdf
+                sink   file:bob.pdf
+
+file:bob.pdf
+               state = BUILT
+             creator   step:sr-compile-typst template.typ --out=bob.pdf --sysinp name=Bob age=31
+              source   step:sr-compile-typst template.typ --out=bob.pdf --sysinp name=Bob age=31
+
+step:sr-compile-typst template.typ --out=charlie.pdf --sysinp name=Charlie age=27
+               state = SUCCEEDED
+                need = DEFAULT
+           using_env = STEPUP_PATH_FILTER [dynamic]
+                     = STEPUP_REPORT_TYPST [dynamic]
+                     = STEPUP_REPORT_TYPST_ARGS [dynamic]
+                     = STEPUP_REPORT_TYPST_KEEP_DEPS [dynamic]
+             creator   step:./plan.py
+              source   file:template.typ
+             product   file:charlie.pdf
+                sink   file:charlie.pdf
+
+file:charlie.pdf
+               state = BUILT
+             creator   step:sr-compile-typst template.typ --out=charlie.pdf --sysinp name=Charlie age=27
+              source   step:sr-compile-typst template.typ --out=charlie.pdf --sysinp name=Charlie age=27

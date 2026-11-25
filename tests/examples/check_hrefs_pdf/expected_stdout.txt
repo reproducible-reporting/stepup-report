@@ -1,0 +1,26 @@
+ STARTUP │ (Re)initialized boot script
+   PHASE │ build
+   START │ ./plan.py
+ SUCCESS │ ./plan.py
+   START │ sr-compile-latex main.tex --run-bibtex --step-info=current_step_info.json
+ SUCCESS │ sr-compile-latex main.tex --run-bibtex --step-info=current_step_info.json
+   START │ sr-check-hrefs main.pdf
+DEFERRED │ sr-check-hrefs main.pdf
+────────────────────────── Unavailable dynamic inputs ──────────────────────────
+BROKEN.md
+────────────────────────────────────────────────────────────────────────────────
+DIRECTOR │ Ran 3 job(s).
+ WARNING │ 1 step(s) remained pending.
+────────────────────────────── Unavailable inputs ──────────────────────────────
+          UNDECLARED: (BROKEN.md)  1 step(s)
+──────────────────────────────────── Remedy ────────────────────────────────────
+Create the input file(s) listed above, correct their static() paths,
+or add a step that builds them.
+Paths in parentheses are detached: no step in the workflow declares them.
+Run `stepup browse` and search for a name above to see the steps involved.
+────────────────────────────────────────────────────────────────────────────────
+ WARNING │ Skipping file cleanup due to incomplete build
+ WARNING │ Check logs: .stepup/warning.log
+   PHASE │ watch
+DIRECTOR │ Wrote graph to current_graph.txt, current_graph_provenance.dot and current_graph_dependency.dot
+DIRECTOR │ See you!

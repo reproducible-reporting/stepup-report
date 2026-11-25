@@ -1,0 +1,18 @@
+ STARTUP │ (Re)initialized boot script
+   PHASE │ build
+   START │ ./plan.py
+ SUCCESS │ ./plan.py
+   START │ sr-nup-pdf src.pdf dst.pdf -p A4
+ SUCCESS │ sr-nup-pdf src.pdf dst.pdf -p A4
+DIRECTOR │ Ran 2 job(s).
+DIRECTOR │ Trying to remove 0 deletable file(s) and empty director(y|ies)
+   PHASE │ watch
+DIRECTOR │ Wrote graph to current_graph.txt, current_graph_provenance.dot and current_graph_dependency.dot
+ DELETED │ dst.pdf
+   PHASE │ build
+   START │ sr-nup-pdf src.pdf dst.pdf -p A4
+ SUCCESS │ sr-nup-pdf src.pdf dst.pdf -p A4
+DIRECTOR │ Ran 1 job(s).
+DIRECTOR │ Trying to remove 0 deletable file(s) and empty director(y|ies)
+   PHASE │ watch
+DIRECTOR │ See you!

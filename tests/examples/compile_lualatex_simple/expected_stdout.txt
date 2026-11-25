@@ -1,0 +1,19 @@
+ STARTUP │ (Re)initialized boot script
+   PHASE │ build
+   START │ ./plan.py
+ SUCCESS │ ./plan.py
+   START │ sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json
+ SUCCESS │ sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json
+DIRECTOR │ Ran 2 job(s).
+DIRECTOR │ Trying to remove 0 deletable file(s) and empty director(y|ies)
+   PHASE │ watch
+DIRECTOR │ Wrote graph to current_graph.txt, current_graph_provenance.dot and current_graph_dependency.dot
+ DELETED │ paper.aux
+ DELETED │ paper.pdf
+   PHASE │ build
+   START │ sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json
+ SUCCESS │ sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json
+DIRECTOR │ Ran 1 job(s).
+DIRECTOR │ Trying to remove 0 deletable file(s) and empty director(y|ies)
+   PHASE │ watch
+DIRECTOR │ See you!

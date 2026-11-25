@@ -1,0 +1,39 @@
+root:
+             product   file:plan.py
+             product   step:./plan.py
+
+file:plan.py
+               state = CONFIRMED
+             creator   root:
+                sink   step:./plan.py
+
+step:./plan.py
+               state = SUCCEEDED
+                need = PLAN
+           using_env = STEPUP_PATH_FILTER [dynamic]
+             creator   root:
+              source   file:plan.py
+             product   file:sub/document.typ
+             product   step:sr-compile-typst ../sub/document.typ --out=../sub/out.pdf  # wd=sub
+
+file:sub/document.typ
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-compile-typst ../sub/document.typ --out=../sub/out.pdf  # wd=sub
+
+step:sr-compile-typst ../sub/document.typ --out=../sub/out.pdf  # wd=sub
+               state = SUCCEEDED
+                need = DEFAULT
+           using_env = STEPUP_PATH_FILTER [dynamic]
+                     = STEPUP_REPORT_TYPST [dynamic]
+                     = STEPUP_REPORT_TYPST_ARGS [dynamic]
+                     = STEPUP_REPORT_TYPST_KEEP_DEPS [dynamic]
+             creator   step:./plan.py
+              source   file:sub/document.typ
+             product   file:sub/out.pdf
+                sink   file:sub/out.pdf
+
+file:sub/out.pdf
+               state = BUILT
+             creator   step:sr-compile-typst ../sub/document.typ --out=../sub/out.pdf  # wd=sub
+              source   step:sr-compile-typst ../sub/document.typ --out=../sub/out.pdf  # wd=sub

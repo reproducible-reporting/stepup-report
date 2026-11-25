@@ -1,0 +1,18 @@
+{
+  "command": "sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json",
+  "inp": [
+    "paper.tex",
+    "subdir/code.txt",
+    "subdir/generated.tex"
+  ],
+  "env": [
+    "STEPUP_PATH_FILTER",
+    "STEPUP_REPORT_LATEX"
+  ],
+  "out": [
+    "paper.aux",
+    "paper.pdf"
+  ],
+  "vol": [],
+  "workdir": "."
+}

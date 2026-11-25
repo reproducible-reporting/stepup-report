@@ -1,0 +1,42 @@
+root:
+             product   file:plan.py
+             product   step:./plan.py
+
+file:plan.py
+               state = CONFIRMED
+             creator   root:
+                sink   step:./plan.py
+
+step:./plan.py
+               state = SUCCEEDED
+                need = PLAN
+           using_env = STEPUP_PATH_FILTER [dynamic]
+             creator   root:
+              source   file:plan.py
+             product   file:bibsane.yaml
+             product   file:paper.aux
+             product   file:references.bib
+             product   step:sr-bibsane references.bib --aux=paper.aux --config=bibsane.yaml
+
+file:bibsane.yaml
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-bibsane references.bib --aux=paper.aux --config=bibsane.yaml
+
+file:paper.aux
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-bibsane references.bib --aux=paper.aux --config=bibsane.yaml
+
+file:references.bib
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-bibsane references.bib --aux=paper.aux --config=bibsane.yaml
+
+step:sr-bibsane references.bib --aux=paper.aux --config=bibsane.yaml
+               state = FAILED
+                need = DEFAULT
+             creator   step:./plan.py
+              source   file:bibsane.yaml
+              source   file:paper.aux
+              source   file:references.bib

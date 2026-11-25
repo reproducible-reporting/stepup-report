@@ -1,0 +1,48 @@
+root:
+             product   file:plan.py
+             product   step:./plan.py
+
+file:plan.py
+               state = CONFIRMED
+             creator   root:
+                sink   step:./plan.py
+
+step:./plan.py
+               state = SUCCEEDED
+                need = PLAN
+           using_env = STEPUP_PATH_FILTER [dynamic]
+             creator   root:
+              source   file:plan.py
+             product   file:README.txt
+             product   file:check_hrefs.yaml
+             product   file:test.html
+             product   step:sr-check-hrefs test.html
+
+file:README.txt
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-check-hrefs test.html
+
+file:check_hrefs.yaml
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-check-hrefs test.html
+
+file:test.html
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-check-hrefs test.html
+
+step:sr-check-hrefs test.html
+               state = PENDING
+                need = DEFAULT
+           using_env = STEPUP_REPORT_CHECK_HREFS_CONFIG [dynamic]
+             creator   step:./plan.py
+              source   (file:BROKEN.md) [dynamic]
+              source   file:README.txt [dynamic]
+              source   file:check_hrefs.yaml [dynamic]
+              source   file:test.html
+
+(file:BROKEN.md)
+               state = UNDECLARED
+                sink   step:sr-check-hrefs test.html

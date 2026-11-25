@@ -1,0 +1,30 @@
+ STARTUP │ (Re)initialized boot script
+   PHASE │ build
+   START │ ./plan.py
+ SUCCESS │ ./plan.py
+   START │ sr-cat-pdf smile.pdf smile.pdf double.pdf
+ SUCCESS │ sr-cat-pdf smile.pdf smile.pdf double.pdf
+   START │ sr-raster-pdf smile.pdf rastered/smile.pdf
+ SUCCESS │ sr-raster-pdf smile.pdf rastered/smile.pdf
+   START │ sr-raster-pdf smile.pdf rastered/smile.png -r 50
+ SUCCESS │ sr-raster-pdf smile.pdf rastered/smile.png -r 50
+   START │ sr-raster-pdf double.pdf 'rastered/double-{0p}-{t}.png' -r 50
+ SUCCESS │ sr-raster-pdf double.pdf 'rastered/double-{0p}-{t}.png' -r 50
+DIRECTOR │ Ran 5 job(s).
+DIRECTOR │ Trying to remove 0 deletable file(s) and empty director(y|ies)
+   PHASE │ watch
+DIRECTOR │ Wrote graph to current_graph.txt, current_graph_provenance.dot and current_graph_dependency.dot
+ DELETED │ rastered/smile.pdf
+ DELETED │ rastered/smile.png
+ DELETED │ rastered/double-1-2.png
+   PHASE │ build
+   START │ sr-raster-pdf smile.pdf rastered/smile.pdf
+ SUCCESS │ sr-raster-pdf smile.pdf rastered/smile.pdf
+   START │ sr-raster-pdf smile.pdf rastered/smile.png -r 50
+ SUCCESS │ sr-raster-pdf smile.pdf rastered/smile.png -r 50
+   START │ sr-raster-pdf double.pdf 'rastered/double-{0p}-{t}.png' -r 50
+ SUCCESS │ sr-raster-pdf double.pdf 'rastered/double-{0p}-{t}.png' -r 50
+DIRECTOR │ Ran 3 job(s).
+DIRECTOR │ Trying to remove 0 deletable file(s) and empty director(y|ies)
+   PHASE │ watch
+DIRECTOR │ See you!

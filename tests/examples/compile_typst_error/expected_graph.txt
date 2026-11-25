@@ -1,0 +1,45 @@
+root:
+             product   file:plan.py
+             product   step:./plan.py
+
+file:plan.py
+               state = CONFIRMED
+             creator   root:
+                sink   step:./plan.py
+
+step:./plan.py
+               state = SUCCEEDED
+                need = PLAN
+           using_env = STEPUP_PATH_FILTER [dynamic]
+             creator   root:
+              source   file:plan.py
+             product   file:error.typ
+             product   step:sr-compile-typst --keep-deps error.typ
+
+file:error.typ
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-compile-typst --keep-deps error.typ
+
+step:sr-compile-typst --keep-deps error.typ
+               state = FAILED
+                need = DEFAULT
+           using_env = STEPUP_PATH_FILTER [dynamic]
+                     = STEPUP_REPORT_TYPST [dynamic]
+                     = STEPUP_REPORT_TYPST_ARGS [dynamic]
+             creator   step:./plan.py
+              source   file:error.typ
+             product   file:error.deps.json
+             product   file:error.pdf
+                sink   file:error.deps.json
+                sink   file:error.pdf
+
+file:error.deps.json
+               state = OUTDATED
+             creator   step:sr-compile-typst --keep-deps error.typ
+              source   step:sr-compile-typst --keep-deps error.typ
+
+file:error.pdf
+               state = PLANNED
+             creator   step:sr-compile-typst --keep-deps error.typ
+              source   step:sr-compile-typst --keep-deps error.typ

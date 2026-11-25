@@ -1,0 +1,203 @@
+# SPDX-FileCopyrightText: 2024 Toon Verstraelen <Toon.Verstraelen@UGent.be>
+# SPDX-License-Identifier: LGPL-3.0-or-later
+[build-system]
+requires = ["setuptools>=77.0", "setuptools_scm>=8.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stepup-report"
+authors = [
+  { name="Toon Verstraelen", email="toon.verstraelen@ugent.be" },
+]
+description = "StepUp extension for reproducible reports"
+readme = "README.md"
+license = "LGPL-3.0-or-later"
+requires-python = ">=3.11"
+keywords = [
+    # snipwise.md BEGIN keywords
+    "build automation",
+    "build tool",
+    "cross-platform",
+    "extension",
+    "Inkscape",
+    "LaTeX",
+    "Markdown",
+    "open science",
+    "Python",
+    "reproducibility",
+    "reproducible reporting",
+    "reproducible research",
+    "research software",
+    "scientific publishing",
+    "scientific writing",
+    "StepUp",
+    "StepUp Core",
+    "Typst",
+    "workflow automation",
+    # snipwise.md END keywords
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Education :: Computer Aided Instruction (CAI)",
+    "Topic :: Text Processing",
+    "Topic :: Text Processing :: Markup :: LaTeX",
+    "Topic :: Text Processing :: Markup :: Markdown",
+]
+dependencies = [
+    "attrs>=23.1.0",
+    "beautifulsoup4>=4.12.0",
+    "cattrs>=23.2.3",
+    "defusedxml>=0.7.0",
+    "lark>=1.3.1",
+    "markdown-it-py>=3.0.0",
+    "mdit-py-plugins>=0.4.2",
+    "numpy>=1.24.3",
+    "pymupdf-lite>=2.0",
+    "pyiso4>=0.1.6",
+    "pyyaml>=6.0",
+    "stepup>=4.3.0a1,<5.0.0a1",
+    "svg.path>=6.0",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+# What the test suite needs, and nothing more.
+# The pytest workflow installs this extra rather than `dev`,
+# because it resolves the oldest supported versions of the direct dependencies,
+# which is only meaningful for packages that the tests actually exercise.
+tests = [
+    "matplotlib>=3.8.0",
+    "pillow>=10.0.0",
+    "pytest>=8.2.0",
+    "pytest-asyncio>=0.24",
+    "pytest-timeout>=2.3.1",
+    "pytest-xdist>=3.6.1",
+    # Users install WeasyPrint themselves, but the example of `convert_weasyprint()` needs it.
+    "weasyprint>=69.0",
+]
+dev = [
+    "stepup-report[tests]",
+    "mkdocstrings-python",
+    "psutil",
+    "reuse",
+    "snipwise<2.0a0",
+    "zensical",
+]
+
+[project.urls]
+Documentation = "https://reproducible-reporting.github.io/stepup-report/"
+Issues = "https://github.com/reproducible-reporting/stepup-report/issues"
+Source = "https://github.com/reproducible-reporting/stepup-report/"
+Changelog = "https://reproducible-reporting.github.io/stepup-report/changelog/"
+
+[project.scripts]
+sr-add-notes-pdf = "stepup.report.add_notes_pdf:main"
+sr-bibsane = "stepup.report.bibsane:main"
+sr-cat-pdf = "stepup.report.cat_pdf:main"
+sr-check-hrefs = "stepup.report.check_hrefs:main"
+sr-compile-latex = "stepup.report.compile_latex:main"
+sr-compile-tectonic = "stepup.report.compile_tectonic:main"
+sr-compile-typst = "stepup.report.compile_typst:main"
+sr-convert-inkscape = "stepup.report.convert_inkscape:main"
+sr-convert-markdown = "stepup.report.convert_markdown:main"
+sr-convert-weasyprint = "stepup.report.convert_weasyprint:main"
+sr-flatten-latex = "stepup.report.flatten_latex:main"
+sr-nup-pdf = "stepup.report.nup_pdf:main"
+sr-raster-pdf = "stepup.report.raster_pdf:main"
+sr-unplot = "stepup.report.unplot:main"
+
+[project.entry-points."stepup.env_vars"]
+report = "stepup.report.env_vars:env_vars"
+
+[tool.pytest.ini_options]
+addopts = "-n auto --dist worksteal --strict-markers -m 'not heavy'"
+markers = ["heavy: requires CPU or memory resources not available in GitHub Actions"]
+asyncio_default_fixture_loop_scope = "function"
+filterwarnings = ["error"]
+timeout = 15
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+# Preview mode is only enabled for the preview rules selected by their full code below,
+# but it also turns on the preview behavior of stable rules.
+preview = true
+explicit-preview-rules = true
+select = [
+    "A", "B", "BLE", "C4", "E", "EXE", "F", "I", "ICN", "ISC", "N", "NPY", "PERF", "PIE", "PL",
+    "PT", "PYI", "RET", "RSE", "RUF", "SIM", "TRY", "UP", "W",
+    "PLW1514",  # https://docs.astral.sh/ruff/rules/unspecified-encoding/ (preview in ruff 0.17.2)
+]
+ignore = [
+    "ISC004",  # https://docs.astral.sh/ruff/rules/isc004/
+    "PLR0904",  # https://docs.astral.sh/ruff/rules/too-many-public-methods/
+    "PLR0911",  # https://docs.astral.sh/ruff/rules/too-many-return-statements/
+    "PLR0912",  # https://docs.astral.sh/ruff/rules/too-many-branches/
+    "PLR0913",  # https://docs.astral.sh/ruff/rules/too-many-arguments/
+    "PLR0914",  # https://docs.astral.sh/ruff/rules/too-many-locals/
+    "PLR0915",  # https://docs.astral.sh/ruff/rules/too-many-statements/
+    "PLR0916",  # https://docs.astral.sh/ruff/rules/too-many-boolean-expressions/
+    "PLR0917",  # https://docs.astral.sh/ruff/rules/too-many-positional/
+    "PLR2004",  # https://docs.astral.sh/ruff/rules/magic-value-comparison/
+    "PLW2901",  # https://docs.astral.sh/ruff/rules/redefined-loop-name/
+    "PT011",  # https://docs.astral.sh/ruff/rules/pytest-raises-too-broad/
+    "RET503",  # https://docs.astral.sh/ruff/rules/implicit-return/
+    "RUF003",  # https://docs.astral.sh/ruff/rules/ambiguous-unicode-character-comment/
+    "TRY003",  # https://docs.astral.sh/ruff/rules/raise-vanilla-args/
+    "TRY300",  # https://docs.astral.sh/ruff/rules/try-consider-else/
+    "TRY301",  # https://docs.astral.sh/ruff/rules/raise-within-try/
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["stepup"]
+
+[tool.setuptools]
+packages = ["stepup.report"]
+
+[tool.setuptools.package-data]
+# Data files are listed explicitly instead of relying on the file list of setuptools-scm,
+# because setuptools-scm 10.3.4 omits them when building a wheel from the sdist on Windows.
+"stepup.report" = ["*.lark"]
+
+[tool.setuptools_scm]
+version_scheme = "post-release"
+local_scheme = "no-local-version"
+
+[tool.pymarkdown]
+# Report unknown or mistyped settings instead of silently ignoring them.
+mode.strict-config = true
+# Without this extension, pymarkdown parses YAML front matter as a setext heading.
+extensions.front-matter.enabled = true
+# Rule md007 (ul-indent) expects a list nested in an ordered list item
+# to be indented to the parent's content column, i.e. three spaces for a `1. ` item.
+# Python-Markdown, and therefore Zensical, only nests such a list when it is indented four spaces.
+plugins.md007.enabled = false
+plugins.md013.line_length = 100
+plugins.md013.heading_line_length = 100
+plugins.md013.code_block_line_length = 100
+# The changelog repeats headings such as "Fixed" under every release,
+# which is fine as long as they do not repeat under the same release.
+plugins.md024.siblings_only = true
+# The default list does not include `script`, which the documentation uses to embed asciinema.
+plugins.md033.allowed_elements = "!--,![CDATA[,!DOCTYPE,script"
+# Rule md041 (first-line-heading) counts the SPDX header in an HTML comment
+# as content preceding the first heading.
+plugins.md041.enabled = false
+# The documentation mixes fenced and indented code blocks on purpose.
+plugins.md046.enabled = false

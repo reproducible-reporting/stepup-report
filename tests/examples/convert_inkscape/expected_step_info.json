@@ -1,0 +1,17 @@
+{
+  "command": "sr-convert-inkscape smile.svg final.pdf --step-info=current_step_info.json",
+  "inp": [
+    "glasses.png",
+    "smile.svg"
+  ],
+  "env": [
+    "STEPUP_PATH_FILTER",
+    "STEPUP_REPORT_INKSCAPE",
+    "STEPUP_REPORT_INKSCAPE_PDF_ARGS"
+  ],
+  "out": [
+    "final.pdf"
+  ],
+  "vol": [],
+  "workdir": "."
+}

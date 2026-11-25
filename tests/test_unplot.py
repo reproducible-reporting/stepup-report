@@ -1,0 +1,88 @@
+# SPDX-FileCopyrightText: 2024 Toon Verstraelen <Toon.Verstraelen@UGent.be>
+# SPDX-License-Identifier: LGPL-3.0-or-later
+"""Unit tests for stepup.report.unplot.
+
+The main function is deliberately not called in process.
+In Python 3.15, a direct call to `main` causes a
+`ResourceWarning: unclosed iterparse iterator`.
+"""
+
+import json
+
+import numpy as np
+from conftest import run_tool
+from numpy.testing import assert_allclose
+
+
+def test_bearing_speed_effect(path_tmp):
+    # Plot taken from:
+    # https://en.m.wikipedia.org/wiki/File:Measured_Bearing_Speed_Effect_data_and_curve.jpg
+    path_out = path_tmp / "out.json"
+    run_tool("sr-unplot", "docs/tutorials/unplot/plot.svg", path_out)
+    with open(path_out, encoding="utf-8") as fh:
+        data = json.load(fh)
+    assert data["units"]["mill speed"] == "mpm"
+    assert data["units"]["screw movement"] == "micron"
+    x = data["curves"]["measured"]["mill speed"]
+    y = data["curves"]["measured"]["screw movement"]
+    assert abs(x[0] - 199) < 1
+    assert abs(y[0] - 165) < 1
+    assert abs(x[-1] - 1099) < 1
+    assert abs(y[-1] - 382) < 1
+    assert len(x) == 10
+    assert len(y) == 10
+
+
+def test_allosteric_modulator(path_tmp):
+    # Plot taken from:
+    # https://en.m.wikipedia.org/wiki/File:Negative_allosteric_modulator_plot.svg
+    path_out = path_tmp / "out.json"
+    run_tool("sr-unplot", "tests/examples/unplot/plot1.svg", path_out)
+    with open(path_out, encoding="utf-8") as fh:
+        data = json.load(fh)
+    xl = "agonist concentration"
+    yl = "response"
+    assert data["units"][xl] == "unknown"
+    assert data["units"][yl] == "percent"
+    curves = data["curves"]
+    xi = curves["initial"][xl]
+    yi = curves["initial"][yl]
+    assert abs(xi[0] - 1e-2) < 1e-5
+    assert abs(yi[0] - 1) < 0.1
+    assert abs(xi[-1] - 2500) < 20
+    assert abs(yi[-1] - 85) < 1
+    assert len(xi) == 49
+    assert len(yi) == 49
+    xs = curves["second"][xl]
+    ys = curves["second"][yl]
+    assert abs(xs[0] - 1e-2) < 1e-5
+    assert abs(ys[0] - 1) < 0.1
+    assert abs(xs[-1] - 2500) < 20
+    assert abs(ys[-1] - 85) < 1
+    assert len(xs) == 33
+    assert len(ys) == 33
+    xt = curves["third"][xl]
+    yt = curves["third"][yl]
+    print(xt)
+    print(yt)
+    assert abs(xt[0] - 1e-2) < 1e-5
+    assert abs(yt[0] - 1) < 0.1
+    assert abs(xt[-1] - 2500) < 20
+    assert abs(yt[-1] - 64) < 1
+    assert len(xt) == 13
+    assert len(yt) == 13
+
+
+def test_simple(path_tmp):
+    path_out = path_tmp / "out.json"
+    run_tool("sr-unplot", "tests/examples/unplot/plot2.svg", path_out)
+    with open(path_out, encoding="utf-8") as fh:
+        data = json.load(fh)
+    assert data["units"]["h"] == "1"
+    assert data["units"]["v"] == "1"
+    x = np.array(data["curves"]["rect"]["h"])
+    y = np.array(data["curves"]["rect"]["v"])
+    assert x.shape == (4,)
+    assert y.shape == (4,)
+    assert_allclose(x, [1, 1, 10, 10], atol=1e-3)
+    assert_allclose(y, [-1, 1, 1, -1], atol=1e-3)

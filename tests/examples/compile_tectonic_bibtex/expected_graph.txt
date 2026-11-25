@@ -1,0 +1,69 @@
+root:
+             product   file:plan.py
+             product   step:./plan.py
+
+file:plan.py
+               state = CONFIRMED
+             creator   root:
+                sink   step:./plan.py
+
+step:./plan.py
+               state = SUCCEEDED
+                need = PLAN
+           using_env = LATEX_MAIN [dynamic]
+                     = STEPUP_PATH_FILTER [dynamic]
+             creator   root:
+              source   file:plan.py
+             product   file:bibsane.yaml
+             product   file:paper.tex
+             product   file:references.bib
+             product   step:sr-bibsane references.bib --config=bibsane.yaml
+             product   step:sr-compile-tectonic --step-info=current_step_info.json paper.tex
+
+file:bibsane.yaml
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-bibsane references.bib --config=bibsane.yaml
+
+file:paper.tex
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-compile-tectonic --step-info=current_step_info.json paper.tex
+
+file:references.bib
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-bibsane references.bib --config=bibsane.yaml
+                sink   step:sr-compile-tectonic --step-info=current_step_info.json paper.tex
+
+step:sr-compile-tectonic --step-info=current_step_info.json paper.tex
+               state = SUCCEEDED
+                need = DEFAULT
+           using_env = STEPUP_PATH_FILTER [dynamic]
+                     = STEPUP_REPORT_TECTONIC [dynamic]
+                     = STEPUP_REPORT_TECTONIC_ARGS [dynamic]
+                     = STEPUP_REPORT_TECTONIC_KEEP_DEPS [dynamic]
+             creator   step:./plan.py
+              source   file:paper.tex
+              source   file:references.bib [dynamic]
+             product   file:current_step_info.json
+             product   file:paper.pdf
+                sink   file:current_step_info.json
+                sink   file:paper.pdf
+
+file:current_step_info.json
+               state = BUILT
+             creator   step:sr-compile-tectonic --step-info=current_step_info.json paper.tex
+              source   step:sr-compile-tectonic --step-info=current_step_info.json paper.tex
+
+file:paper.pdf
+               state = BUILT
+             creator   step:sr-compile-tectonic --step-info=current_step_info.json paper.tex
+              source   step:sr-compile-tectonic --step-info=current_step_info.json paper.tex
+
+step:sr-bibsane references.bib --config=bibsane.yaml
+               state = SUCCEEDED
+                need = DEFAULT
+             creator   step:./plan.py
+              source   file:bibsane.yaml
+              source   file:references.bib

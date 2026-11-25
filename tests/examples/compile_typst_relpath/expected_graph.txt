@@ -1,0 +1,66 @@
+root:
+             product   file:plan.py
+             product   step:./plan.py
+
+file:plan.py
+               state = CONFIRMED
+             creator   root:
+                sink   step:./plan.py
+
+step:./plan.py
+               state = SUCCEEDED
+                need = PLAN
+           using_env = STEPUP_PATH_FILTER [dynamic]
+             creator   root:
+              source   file:plan.py
+             product   file:source/data/productivity.csv
+             product   file:source/document.typ
+             product   file:source/tada.svg
+             product   step:sr-compile-typst --keep-deps --step-info=current_step_info.json source/document.typ --out=out.pdf
+
+file:source/data/productivity.csv
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-compile-typst --keep-deps --step-info=current_step_info.json source/document.typ --out=out.pdf
+
+file:source/document.typ
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-compile-typst --keep-deps --step-info=current_step_info.json source/document.typ --out=out.pdf
+
+file:source/tada.svg
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-compile-typst --keep-deps --step-info=current_step_info.json source/document.typ --out=out.pdf
+
+step:sr-compile-typst --keep-deps --step-info=current_step_info.json source/document.typ --out=out.pdf
+               state = SUCCEEDED
+                need = DEFAULT
+           using_env = STEPUP_PATH_FILTER [dynamic]
+                     = STEPUP_REPORT_TYPST [dynamic]
+                     = STEPUP_REPORT_TYPST_ARGS [dynamic]
+             creator   step:./plan.py
+              source   file:source/data/productivity.csv [dynamic]
+              source   file:source/document.typ
+              source   file:source/tada.svg [dynamic]
+             product   file:current_step_info.json
+             product   file:out.pdf
+             product   file:source/document.deps.json
+                sink   file:current_step_info.json
+                sink   file:out.pdf
+                sink   file:source/document.deps.json
+
+file:current_step_info.json
+               state = BUILT
+             creator   step:sr-compile-typst --keep-deps --step-info=current_step_info.json source/document.typ --out=out.pdf
+              source   step:sr-compile-typst --keep-deps --step-info=current_step_info.json source/document.typ --out=out.pdf
+
+file:out.pdf
+               state = BUILT
+             creator   step:sr-compile-typst --keep-deps --step-info=current_step_info.json source/document.typ --out=out.pdf
+              source   step:sr-compile-typst --keep-deps --step-info=current_step_info.json source/document.typ --out=out.pdf
+
+file:source/document.deps.json
+               state = BUILT
+             creator   step:sr-compile-typst --keep-deps --step-info=current_step_info.json source/document.typ --out=out.pdf
+              source   step:sr-compile-typst --keep-deps --step-info=current_step_info.json source/document.typ --out=out.pdf

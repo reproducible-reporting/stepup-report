@@ -1,0 +1,15 @@
+ STARTUP │ (Re)initialized boot script
+   PHASE │ build
+   START │ ./plan.py
+ SUCCESS │ ./plan.py
+   START │ sr-compile-typst template.typ --out=alice.pdf --sysinp name=Alic age=29
+ SUCCESS │ sr-compile-typst template.typ --out=alice.pdf --sysinp name=Alic age=29
+   START │ sr-compile-typst template.typ --out=bob.pdf --sysinp name=Bob age=31
+ SUCCESS │ sr-compile-typst template.typ --out=bob.pdf --sysinp name=Bob age=31
+   START │ sr-compile-typst template.typ --out=charlie.pdf --sysinp name=Charlie age=27
+ SUCCESS │ sr-compile-typst template.typ --out=charlie.pdf --sysinp name=Charlie age=27
+DIRECTOR │ Ran 4 job(s).
+DIRECTOR │ Trying to remove 0 deletable file(s) and empty director(y|ies)
+   PHASE │ watch
+DIRECTOR │ Wrote graph to current_graph.txt, current_graph_provenance.dot and current_graph_dependency.dot
+DIRECTOR │ See you!

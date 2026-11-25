@@ -1,0 +1,28 @@
+ STARTUP │ (Re)initialized boot script
+   PHASE │ build
+   START │ ./plan.py
+ SUCCESS │ ./plan.py
+   START │ sr-convert-inkscape smile.svg final.pdf --step-info=current_step_info.json
+DEFERRED │ sr-convert-inkscape smile.svg final.pdf --step-info=current_step_info.json
+────────────────────────── Unavailable dynamic inputs ──────────────────────────
+glasses.png
+────────────────────────────────────────────────────────────────────────────────
+   START │ sr-convert-inkscape glasses.svg glasses.png
+ SUCCESS │ sr-convert-inkscape glasses.svg glasses.png
+   START │ sr-convert-inkscape smile.svg final.pdf --step-info=current_step_info.json
+ SUCCESS │ sr-convert-inkscape smile.svg final.pdf --step-info=current_step_info.json
+DIRECTOR │ Ran 4 job(s).
+DIRECTOR │ Trying to remove 0 deletable file(s) and empty director(y|ies)
+   PHASE │ watch
+DIRECTOR │ Wrote graph to current_graph.txt, current_graph_provenance.dot and current_graph_dependency.dot
+ DELETED │ final.pdf
+ DELETED │ glasses.png
+   PHASE │ build
+   START │ sr-convert-inkscape glasses.svg glasses.png
+ SUCCESS │ sr-convert-inkscape glasses.svg glasses.png
+   START │ sr-convert-inkscape smile.svg final.pdf --step-info=current_step_info.json
+ SUCCESS │ sr-convert-inkscape smile.svg final.pdf --step-info=current_step_info.json
+DIRECTOR │ Ran 2 job(s).
+DIRECTOR │ Trying to remove 0 deletable file(s) and empty director(y|ies)
+   PHASE │ watch
+DIRECTOR │ See you!

@@ -1,0 +1,98 @@
+root:
+             product   file:plan.py
+             product   step:./plan.py
+
+file:plan.py
+               state = CONFIRMED
+             creator   root:
+                sink   step:./plan.py
+
+step:./plan.py
+               state = SUCCEEDED
+                need = PLAN
+           using_env = LATEX_MAIN [dynamic]
+                     = STEPUP_PATH_FILTER [dynamic]
+             creator   root:
+              source   file:plan.py
+             product   file:bibsane.yaml
+             product   file:paper.tex
+             product   file:references.bib
+             product   step:sr-bibsane references.bib --aux=paper.aux --config=bibsane.yaml
+             product   step:sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json
+
+file:bibsane.yaml
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-bibsane references.bib --aux=paper.aux --config=bibsane.yaml
+
+file:paper.tex
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json
+
+file:references.bib
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-bibsane references.bib --aux=paper.aux --config=bibsane.yaml
+                sink   step:sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json
+
+step:sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json
+               state = SUCCEEDED
+                need = DEFAULT
+           using_env = STEPUP_PATH_FILTER [dynamic]
+                     = STEPUP_REPORT_BIBTEX [dynamic]
+                     = STEPUP_REPORT_LATEX [dynamic]
+             creator   step:./plan.py
+              source   file:paper.tex
+              source   file:references.bib [dynamic]
+             product   file:current_step_info.json
+             product   file:paper.aux
+             product   file:paper.bbl
+             product   file:paper.fls
+             product   file:paper.log
+             product   file:paper.pdf
+                sink   file:current_step_info.json
+                sink   file:paper.aux
+                sink   file:paper.bbl [dynamic]
+                sink   file:paper.fls
+                sink   file:paper.log [dynamic]
+                sink   file:paper.pdf
+
+file:current_step_info.json
+               state = BUILT
+             creator   step:sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json
+              source   step:sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json
+
+file:paper.aux
+               state = BUILT
+             creator   step:sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json
+              source   step:sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json
+                sink   step:sr-bibsane references.bib --aux=paper.aux --config=bibsane.yaml
+
+file:paper.fls
+               state = BUILT
+             creator   step:sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json
+              source   step:sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json
+
+file:paper.pdf
+               state = BUILT
+             creator   step:sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json
+              source   step:sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json
+
+step:sr-bibsane references.bib --aux=paper.aux --config=bibsane.yaml
+               state = SUCCEEDED
+                need = DEFAULT
+             creator   step:./plan.py
+              source   file:bibsane.yaml
+              source   file:paper.aux
+              source   file:references.bib
+
+file:paper.bbl
+               state = BUILT
+             creator   step:sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json
+              source   step:sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json
+
+file:paper.log
+               state = VOLATILE
+             creator   step:sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json
+              source   step:sr-compile-latex paper.tex --run-bibtex --step-info=current_step_info.json

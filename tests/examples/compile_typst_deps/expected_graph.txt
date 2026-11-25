@@ -1,0 +1,71 @@
+root:
+             product   file:plan.py
+             product   step:./plan.py
+
+file:plan.py
+               state = CONFIRMED
+             creator   root:
+                sink   step:./plan.py
+
+step:./plan.py
+               state = SUCCEEDED
+                need = PLAN
+           using_env = STEPUP_PATH_FILTER [dynamic]
+             creator   root:
+              source   file:plan.py
+             product   file:document.typ
+             product   file:image.py
+             product   step:./image.py
+             product   step:sr-compile-typst document.typ
+
+file:document.typ
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-compile-typst document.typ
+
+file:image.py
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:./image.py
+
+step:sr-compile-typst document.typ
+               state = SUCCEEDED
+                need = DEFAULT
+           using_env = STEPUP_PATH_FILTER [dynamic]
+                     = STEPUP_REPORT_TYPST [dynamic]
+                     = STEPUP_REPORT_TYPST_ARGS [dynamic]
+                     = STEPUP_REPORT_TYPST_KEEP_DEPS [dynamic]
+             creator   step:./plan.py
+              source   file:document.typ
+              source   file:image.jpg [dynamic]
+             product   file:document.deps.json
+             product   file:document.pdf
+                sink   file:document.deps.json [dynamic]
+                sink   file:document.pdf
+
+file:document.pdf
+               state = BUILT
+             creator   step:sr-compile-typst document.typ
+              source   step:sr-compile-typst document.typ
+
+step:./image.py
+               state = SUCCEEDED
+                need = DEFAULT
+           using_env = BG_COLOR [dynamic]
+                     = FG_COLOR [dynamic]
+                     = STEPUP_PATH_FILTER [dynamic]
+             creator   step:./plan.py
+              source   file:image.py
+             product   file:image.jpg
+                sink   file:image.jpg
+
+file:image.jpg
+               state = BUILT
+             creator   step:./image.py
+              source   step:./image.py
+                sink   step:sr-compile-typst document.typ
+
+file:document.deps.json
+               state = BUILT
+             creator   step:sr-compile-typst document.typ
+              source   step:sr-compile-typst document.typ

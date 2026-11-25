@@ -1,0 +1,85 @@
+# SPDX-FileCopyrightText: 2024 Toon Verstraelen <Toon.Verstraelen@UGent.be>
+# SPDX-License-Identifier: LGPL-3.0-or-later
+"""Unit tests for stepup.report.bibsane"""
+
+import contextlib
+import os
+
+import pytest
+
+from stepup.core.path import Path
+from stepup.report.bibsane import brace_words
+from stepup.report.bibsane import main as bibsane_main
+
+OVERWRITE_EXPECTED = "STEPUP_OVERWRITE_EXPECTED" in os.environ
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "abbreviate-journals",
+        "aux-empty",
+        "aux-missing",
+        "aux-unused",
+        "brace-title-words",
+        "drop-entries",
+        "duplicate-doi-ignore",
+        "duplicate-doi-fail",
+        "duplicate-doi-merge-fail",
+        "duplicate-doi-merge-pass",
+        "math",
+        "minimal",
+        "normalize-doi",
+        "normalize-whitespace",
+        "pages-empty",
+        "pages-range-broken",
+        "pages-range1",
+        "pages-range2",
+        "pages-strip",
+        "policy-may",
+        "policy-must-fail",
+        "policy-must-pass",
+        "preserve-commands",
+        "sort",
+        "sort-missing-fields",
+        "strip-braces",
+    ],
+)
+def test_example(name):
+    args = ["input.bib", "--out", "current.bib"]
+    with contextlib.chdir(f"tests/bibsane/{name}"):
+        path_config = Path("bibsane.yaml")
+        if path_config.exists():
+            args += ["--config", str(path_config)]
+        path_aux = Path("document.aux")
+        if path_aux.exists():
+            args += ["--aux", str(path_aux)]
+
+        Path("current.bib").remove_p()
+        with (
+            open("current.out", "w", encoding="utf-8", newline="\n") as f_out,
+            contextlib.redirect_stdout(f_out),
+        ):
+            bibsane_main(args)
+
+        for suffix in ["out", "bib"]:
+            path_expected = Path(f"expected.{suffix}")
+            path_current = Path(f"current.{suffix}")
+            if OVERWRITE_EXPECTED:
+                if path_current.exists():
+                    path_current.copy(path_expected)
+            elif path_expected.exists():
+                assert path_current.exists()
+                with open(path_current, encoding="utf-8") as f:
+                    current = f.read()
+                with open(path_expected, encoding="utf-8") as f:
+                    expected = f.read()
+                assert current == expected
+            else:
+                assert not path_current.exists()
+
+
+def test_brace_word():
+    assert brace_words("word WORD") == "word {WORD}"
+    assert brace_words("This is CamelCase") == "This is {CamelCase}"
+    assert brace_words("Chemical formula CO2") == "Chemical formula {CO2}"

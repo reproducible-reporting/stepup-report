@@ -1,0 +1,18 @@
+ STARTUP │ (Re)initialized boot script
+   PHASE │ build
+   START │ ./plan.py
+ SUCCESS │ ./plan.py
+   START │ sr-compile-tectonic --keep-deps --step-info=current_step_info.json sub/paper.tex
+DEFERRED │ sr-compile-tectonic --keep-deps --step-info=current_step_info.json sub/paper.tex
+────────────────────────── Unavailable dynamic inputs ──────────────────────────
+sub/generated.tex
+────────────────────────────────────────────────────────────────────────────────
+   START │ echo 'Hi there!' > generated.tex  # wd=sub
+ SUCCESS │ echo 'Hi there!' > generated.tex  # wd=sub
+   START │ sr-compile-tectonic --keep-deps --step-info=current_step_info.json sub/paper.tex
+ SUCCESS │ sr-compile-tectonic --keep-deps --step-info=current_step_info.json sub/paper.tex
+DIRECTOR │ Ran 4 job(s).
+DIRECTOR │ Trying to remove 0 deletable file(s) and empty director(y|ies)
+   PHASE │ watch
+DIRECTOR │ Wrote graph to current_graph.txt, current_graph_provenance.dot and current_graph_dependency.dot
+DIRECTOR │ See you!

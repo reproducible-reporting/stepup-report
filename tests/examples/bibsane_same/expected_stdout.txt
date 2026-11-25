@@ -1,0 +1,34 @@
+ STARTUP │ (Re)initialized boot script
+   PHASE │ build
+   START │ ./plan.py
+ SUCCESS │ ./plan.py
+   START │ sr-bibsane references.bib --aux=paper.aux --config=bibsane.yaml
+    FAIL │ sr-bibsane references.bib --aux=paper.aux --config=bibsane.yaml
+──────────────────────────────── Failed command ────────────────────────────────
+sr-bibsane references.bib --aux=paper.aux --config=bibsane.yaml  # exit=1
+──────────────────────────────── Invalid inputs ────────────────────────────────
+Input changed unexpectedly: references.bib (digest 240c3a42 ➜ 5d12dcdd, size 1644 ➜ 1585)
+─────────────────────────────── Standard output ────────────────────────────────
+📂 Load references.bib
+    Found 1 BibTeX entries
+📂 Load paper.aux
+    Found 1 citations
+    Found 1 unique citations
+🔨 Checking unused and missing citations
+🔨 Check for potential mistakes in BibTeX keys
+🔨 Normalize DOIs
+🔨 Normalize whitespace
+🔨 Fix double hyphen in page ranges
+🔨 Abbreviate journal names
+    📓 The Journal of Chemical Physics -> J. Chem. Phys.
+💾 Please check the new or corrected file: references.bib
+────────────────────────────────────────────────────────────────────────────────
+   ERROR │ The scheduler is draining due to unexpected input changes.
+DIRECTOR │ Ran 2 job(s).
+ WARNING │ 1 step(s) failed.
+ WARNING │ Scheduler is draining. Not reporting pending steps.
+ WARNING │ Skipping file cleanup due to incomplete build
+ WARNING │ Check logs: .stepup/fail.log .stepup/warning.log
+   PHASE │ watch
+DIRECTOR │ Wrote graph to current_graph.txt, current_graph_provenance.dot and current_graph_dependency.dot
+DIRECTOR │ See you!

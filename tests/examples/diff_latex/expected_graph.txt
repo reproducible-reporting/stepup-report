@@ -1,0 +1,44 @@
+root:
+             product   file:plan.py
+             product   step:./plan.py
+
+file:plan.py
+               state = CONFIRMED
+             creator   root:
+                sink   step:./plan.py
+
+step:./plan.py
+               state = SUCCEEDED
+                need = PLAN
+           using_env = STEPUP_PATH_FILTER [dynamic]
+                     = STEPUP_REPORT_LATEXDIFF [dynamic]
+                     = STEPUP_REPORT_LATEXDIFF_ARGS [dynamic]
+             creator   root:
+              source   file:plan.py
+             product   file:new.tex
+             product   file:old.tex
+             product   step:latexdiff --append-context2cmd=abstract,supplementary,dataavailability,funding,authorcontributions,conflictsofinterest,abbreviations old.tex new.tex --no-label > diff.tex
+
+file:new.tex
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:latexdiff --append-context2cmd=abstract,supplementary,dataavailability,funding,authorcontributions,conflictsofinterest,abbreviations old.tex new.tex --no-label > diff.tex
+
+file:old.tex
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:latexdiff --append-context2cmd=abstract,supplementary,dataavailability,funding,authorcontributions,conflictsofinterest,abbreviations old.tex new.tex --no-label > diff.tex
+
+step:latexdiff --append-context2cmd=abstract,supplementary,dataavailability,funding,authorcontributions,conflictsofinterest,abbreviations old.tex new.tex --no-label > diff.tex
+               state = SUCCEEDED
+                need = DEFAULT
+             creator   step:./plan.py
+              source   file:new.tex
+              source   file:old.tex
+             product   file:diff.tex
+                sink   file:diff.tex
+
+file:diff.tex
+               state = BUILT
+             creator   step:latexdiff --append-context2cmd=abstract,supplementary,dataavailability,funding,authorcontributions,conflictsofinterest,abbreviations old.tex new.tex --no-label > diff.tex
+              source   step:latexdiff --append-context2cmd=abstract,supplementary,dataavailability,funding,authorcontributions,conflictsofinterest,abbreviations old.tex new.tex --no-label > diff.tex

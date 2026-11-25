@@ -1,0 +1,21 @@
+ STARTUP │ (Re)initialized boot script
+   PHASE │ build
+   START │ ./plan.py
+ SUCCESS │ ./plan.py
+   START │ sr-compile-typst --keep-deps error.typ
+    FAIL │ sr-compile-typst --keep-deps error.typ
+──────────────────────────────── Failed command ────────────────────────────────
+sr-compile-typst --keep-deps error.typ  # exit=1
+───────────────────────── Expected outputs not created ─────────────────────────
+error.pdf
+──────────────────────────────── Standard error ────────────────────────────────
+(stripped)
+────────────────────────────────────────────────────────────────────────────────
+DIRECTOR │ Ran 2 job(s).
+ WARNING │ 1 step(s) failed.
+ WARNING │ Scheduler is draining. Not reporting pending steps.
+ WARNING │ Skipping file cleanup due to incomplete build
+ WARNING │ Check logs: .stepup/fail.log .stepup/warning.log
+   PHASE │ watch
+DIRECTOR │ Wrote graph to current_graph.txt, current_graph_provenance.dot and current_graph_dependency.dot
+DIRECTOR │ See you!

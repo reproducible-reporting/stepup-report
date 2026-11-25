@@ -1,0 +1,68 @@
+# SPDX-FileCopyrightText: 2024 Toon Verstraelen <Toon.Verstraelen@UGent.be>
+# SPDX-License-Identifier: LGPL-3.0-or-later
+cff-version: 1.2.0
+message: If you use this software, please cite it using these metadata.
+title: StepUp Report
+type: software
+url: https://reproducible-reporting.github.io/stepup-report
+abstract: >-
+  StepUp Report is an extension of the
+  StepUp Core build tool
+  for writing reproducible reports.
+  It compiles LaTeX, Typst and Markdown sources,
+  converts figures with Inkscape,
+  post-processes PDF files,
+  and cleans up BibTeX databases.
+  StepUp Core tracks the inputs and outputs of each step,
+  so only the steps affected by a change are rerun.
+  StepUp Report is part of
+  Reproducible Reporting.
+authors:
+  - family-names: Verstraelen
+    given-names: Toon
+    orcid: https://orcid.org/0000-0001-9288-5608
+    affiliation: Center for Molecular Modeling (CMM), Ghent University
+    address: Technologiepark-Zwijnaarde 46
+    post-code: 9052
+    city: Zwijnaarde
+    country: BE
+license: LGPL-3.0-or-later
+repository-code: https://github.com/reproducible-reporting/stepup-report
+keywords:
+  # snipwise.md BEGIN keywords
+  - build automation
+  - build tool
+  - cross-platform
+  - extension
+  - Inkscape
+  - LaTeX
+  - Markdown
+  - open science
+  - Python
+  - reproducibility
+  - reproducible reporting
+  - reproducible research
+  - research software
+  - scientific publishing
+  - scientific writing
+  - StepUp
+  - StepUp Core
+  - Typst
+  - workflow automation
+  # snipwise.md END keywords
+references:
+  - title: StepUp Core
+    type: software
+    authors:
+      - family-names: Verstraelen
+        given-names: Toon
+        orcid: https://orcid.org/0000-0001-9288-5608
+        affiliation: Center for Molecular Modeling (CMM), Ghent University
+    url: https://reproducible-reporting.github.io/stepup-core
+    repository-code: https://github.com/reproducible-reporting/stepup-core
+    license: LGPL-3.0-or-later
+    identifiers:
+      - type: doi
+        value: 10.5281/zenodo.22018869
+        description: Concept DOI, which always resolves to the latest archived version.
+    notes: StepUp Report is an extension of StepUp Core and requires it at runtime.

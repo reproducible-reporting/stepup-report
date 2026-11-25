@@ -1,0 +1,100 @@
+root:
+             product   file:plan.py
+             product   step:./plan.py
+
+file:plan.py
+               state = CONFIRMED
+             creator   root:
+                sink   step:./plan.py
+
+step:./plan.py
+               state = SUCCEEDED
+                need = PLAN
+           using_env = STEPUP_PATH_FILTER [dynamic]
+             creator   root:
+              source   file:plan.py
+             product   file:README.txt
+             product   file:check_hrefs.yaml
+             product   file:main.tex
+             product   step:sr-check-hrefs main.pdf
+             product   step:sr-compile-latex main.tex --run-bibtex --step-info=current_step_info.json
+
+file:README.txt
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-check-hrefs main.pdf
+
+file:check_hrefs.yaml
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-check-hrefs main.pdf
+
+file:main.tex
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-compile-latex main.tex --run-bibtex --step-info=current_step_info.json
+
+step:sr-compile-latex main.tex --run-bibtex --step-info=current_step_info.json
+               state = SUCCEEDED
+                need = DEFAULT
+           using_env = STEPUP_PATH_FILTER [dynamic]
+                     = STEPUP_REPORT_LATEX [dynamic]
+             creator   step:./plan.py
+              source   file:main.tex
+             product   file:current_step_info.json
+             product   file:main.aux
+             product   file:main.fls
+             product   file:main.log
+             product   file:main.out
+             product   file:main.pdf
+                sink   file:current_step_info.json
+                sink   file:main.aux
+                sink   file:main.fls
+                sink   file:main.log [dynamic]
+                sink   file:main.out [dynamic]
+                sink   file:main.pdf
+
+file:current_step_info.json
+               state = BUILT
+             creator   step:sr-compile-latex main.tex --run-bibtex --step-info=current_step_info.json
+              source   step:sr-compile-latex main.tex --run-bibtex --step-info=current_step_info.json
+
+file:main.aux
+               state = BUILT
+             creator   step:sr-compile-latex main.tex --run-bibtex --step-info=current_step_info.json
+              source   step:sr-compile-latex main.tex --run-bibtex --step-info=current_step_info.json
+
+file:main.fls
+               state = BUILT
+             creator   step:sr-compile-latex main.tex --run-bibtex --step-info=current_step_info.json
+              source   step:sr-compile-latex main.tex --run-bibtex --step-info=current_step_info.json
+
+file:main.pdf
+               state = BUILT
+             creator   step:sr-compile-latex main.tex --run-bibtex --step-info=current_step_info.json
+              source   step:sr-compile-latex main.tex --run-bibtex --step-info=current_step_info.json
+                sink   step:sr-check-hrefs main.pdf
+
+step:sr-check-hrefs main.pdf
+               state = PENDING
+                need = DEFAULT
+           using_env = STEPUP_REPORT_CHECK_HREFS_CONFIG [dynamic]
+             creator   step:./plan.py
+              source   (file:BROKEN.md) [dynamic]
+              source   file:README.txt [dynamic]
+              source   file:check_hrefs.yaml [dynamic]
+              source   file:main.pdf
+
+file:main.log
+               state = VOLATILE
+             creator   step:sr-compile-latex main.tex --run-bibtex --step-info=current_step_info.json
+              source   step:sr-compile-latex main.tex --run-bibtex --step-info=current_step_info.json
+
+file:main.out
+               state = VOLATILE
+             creator   step:sr-compile-latex main.tex --run-bibtex --step-info=current_step_info.json
+              source   step:sr-compile-latex main.tex --run-bibtex --step-info=current_step_info.json
+
+(file:BROKEN.md)
+               state = UNDECLARED
+                sink   step:sr-check-hrefs main.pdf

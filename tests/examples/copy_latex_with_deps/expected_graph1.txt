@@ -1,0 +1,67 @@
+root:
+             product   file:plan.py
+             product   step:./plan.py
+
+file:plan.py
+               state = CONFIRMED
+             creator   root:
+                sink   step:./plan.py
+
+step:./plan.py
+               state = SUCCEEDED
+                need = PLAN
+           using_env = STEPUP_PATH_FILTER [dynamic]
+             creator   root:
+              source   file:plan.py
+              source   file:snippet.tex [dynamic]
+             product   file:doc.tex
+             product   file:first.dat
+             product   file:second.dat
+             product   file:snippet.tex
+             product   step:cp -p first.dat dest/first.dat
+             product   step:cp -p snippet.tex dest/snippet.tex
+
+file:doc.tex
+               state = CONFIRMED
+             creator   step:./plan.py
+
+file:first.dat
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:cp -p first.dat dest/first.dat
+
+file:second.dat
+               state = CONFIRMED
+             creator   step:./plan.py
+
+file:snippet.tex
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:./plan.py
+                sink   step:cp -p snippet.tex dest/snippet.tex
+
+step:cp -p first.dat dest/first.dat
+               state = SUCCEEDED
+                need = DEFAULT
+             creator   step:./plan.py
+              source   file:first.dat
+             product   file:dest/first.dat
+                sink   file:dest/first.dat
+
+file:dest/first.dat
+               state = BUILT
+             creator   step:cp -p first.dat dest/first.dat
+              source   step:cp -p first.dat dest/first.dat
+
+step:cp -p snippet.tex dest/snippet.tex
+               state = SUCCEEDED
+                need = DEFAULT
+             creator   step:./plan.py
+              source   file:snippet.tex
+             product   file:dest/snippet.tex
+                sink   file:dest/snippet.tex
+
+file:dest/snippet.tex
+               state = BUILT
+             creator   step:cp -p snippet.tex dest/snippet.tex
+              source   step:cp -p snippet.tex dest/snippet.tex

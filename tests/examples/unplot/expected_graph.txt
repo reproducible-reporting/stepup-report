@@ -1,0 +1,55 @@
+root:
+             product   file:plan.py
+             product   step:./plan.py
+
+file:plan.py
+               state = CONFIRMED
+             creator   root:
+                sink   step:./plan.py
+
+step:./plan.py
+               state = SUCCEEDED
+                need = PLAN
+           using_env = STEPUP_PATH_FILTER [dynamic]
+             creator   root:
+              source   file:plan.py
+             product   file:plot1.svg
+             product   file:plot2.svg
+             product   step:sr-unplot plot1.svg current_plot1.json
+             product   step:sr-unplot plot2.svg current_plot2.json
+
+file:plot1.svg
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-unplot plot1.svg current_plot1.json
+
+file:plot2.svg
+               state = CONFIRMED
+             creator   step:./plan.py
+                sink   step:sr-unplot plot2.svg current_plot2.json
+
+step:sr-unplot plot1.svg current_plot1.json
+               state = SUCCEEDED
+                need = DEFAULT
+             creator   step:./plan.py
+              source   file:plot1.svg
+             product   file:current_plot1.json
+                sink   file:current_plot1.json
+
+file:current_plot1.json
+               state = BUILT
+             creator   step:sr-unplot plot1.svg current_plot1.json
+              source   step:sr-unplot plot1.svg current_plot1.json
+
+step:sr-unplot plot2.svg current_plot2.json
+               state = SUCCEEDED
+                need = DEFAULT
+             creator   step:./plan.py
+              source   file:plot2.svg
+             product   file:current_plot2.json
+                sink   file:current_plot2.json
+
+file:current_plot2.json
+               state = BUILT
+             creator   step:sr-unplot plot2.svg current_plot2.json
+              source   step:sr-unplot plot2.svg current_plot2.json

@@ -1,0 +1,9 @@
+.stepup
+generated.tex
+current_*
+paper.pdf
+paper.log
+paper.aux
+paper.fls
+paper1.pdf
+journal_abbreviation_cache.json

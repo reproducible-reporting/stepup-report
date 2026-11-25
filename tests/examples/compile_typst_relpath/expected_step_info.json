@@ -1,0 +1,18 @@
+{
+  "command": "sr-compile-typst --keep-deps --step-info=current_step_info.json source/document.typ --out=out.pdf",
+  "inp": [
+    "source/data/productivity.csv",
+    "source/document.typ",
+    "source/tada.svg"
+  ],
+  "env": [
+    "STEPUP_PATH_FILTER",
+    "STEPUP_REPORT_TYPST",
+    "STEPUP_REPORT_TYPST_ARGS"
+  ],
+  "out": [
+    "out.pdf"
+  ],
+  "vol": [],
+  "workdir": "."
+}
