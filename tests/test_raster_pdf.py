@@ -1,9 +1,21 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: LGPL-3.0-or-later
-"""Unit tests for stepup.report.raster_pdf."""
+"""Unit tests for stepup.report.raster_pdf.
+
+On macOS, importing `pymupdf` inside a pytest-xdist worker segfaults
+(observed with the `pymupdf-lite` 2.0 and 2.1 wheels on the `macos-26-arm64` GitHub runner),
+while the same import works in a fresh process.
+This module is therefore skipped on macOS before `pymupdf` is imported.
+"""
+
+import sys
+
+import pytest
+
+if sys.platform == "darwin":
+    pytest.skip("Importing pymupdf in a pytest worker segfaults on macOS", allow_module_level=True)
 
 import pymupdf
-import pytest
 
 from stepup.core.path import Path
 from stepup.report.raster_pdf import raster_png
