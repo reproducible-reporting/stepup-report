@@ -62,8 +62,7 @@ jobs:
     name: Publish documentation on GitHub Pages
     timeout-minutes: 5
     needs: build
-    # GitHub Pages is not available for private repositories on the Free plan.
-    if: github.event_name == 'push' && !github.event.repository.private
+    if: github.event_name == 'push'
     permissions:
       pages: write
       id-token: write

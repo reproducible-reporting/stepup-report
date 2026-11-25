@@ -144,11 +144,7 @@ jobs:
   publish-to-testpypi:
     name: Publish Python distribution to TestPyPI
     timeout-minutes: 3
-    # A private repository has no trusted publisher on TestPyPI.
-    if: >-
-      ${{ github.ref == 'refs/heads/main'
-      && github.repository_owner == 'reproducible-reporting'
-      && !github.event.repository.private }}
+    if: ${{ github.ref == 'refs/heads/main' && github.repository_owner == 'reproducible-reporting' }}
     needs:
     - build
     runs-on: ubuntu-latest
